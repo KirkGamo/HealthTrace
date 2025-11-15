@@ -1,4 +1,7 @@
 // Dashboard JavaScript for Disease Outbreak Forecasting
+SciChart.SciChartSurface.configure({
+    wasmUrl: "https://cdn.jsdelivr.net/npm/scichart@4.0.897/_wasm/scichart2d.wasm"
+});
 
 let currentDisease = null;
 let currentForecastData = null;
@@ -37,22 +40,6 @@ async function loadCurrentStatus() {
 
 // Create status card for a disease
 function createStatusCard(disease) {
-    const card = document.createElement('div');
-    card.className = 'status-card';
-    
-    const trendClass = disease.trend === 'increasing' ? 'increasing' : 'decreasing';
-    const trendIcon = disease.trend === 'increasing' ? '📈' : '📉';
-    
-    card.innerHTML = `
-        <h3>${disease.disease}</h3>
-        <div class="cases">${disease.current_cases}</div>
-        <p style="color: #666; font-size: 0.9em;">cases reported</p>
-        <p style="color: #999; font-size: 0.85em; margin-top: 5px;">${disease.date}</p>
-        <span class="trend ${trendClass}">${trendIcon} ${disease.trend}</span>
-    `;
-    
-    return card;
-}function createStatusCard(disease) {
     const card = document.createElement('div');
     // Added transition classes for smooth hover effect
     card.className = 'bg-white p-5 rounded-lg shadow-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1';
@@ -187,14 +174,14 @@ async function loadDiseaseForecasts(disease) {
         updateStatistics(forecastData);
         
         // Plot forecast chart
-        plotForecastChart(forecastData);
+        await plotForecastChart(forecastData);
 
         renderDataTable(forecastData); // <-- ADD THIS NEW function call
 
         setupExportButton();
         
         // Load and plot climate data
-        loadClimateData(disease);
+        await loadClimateData(disease);
         
     } catch (error) {
         console.error('Error loading forecast:', error);
@@ -308,54 +295,74 @@ function updateStatistics(data) {
 }
 
 // Plot forecast chart
-function plotForecastChart(data) {
-    // ---> FIX: Get the container and remove loader-specific classes
-    const forecastChartContainer = document.getElementById('forecastChart');
-    forecastChartContainer.classList.remove('flex', 'items-center', 'justify-center');
-    
-    const historicalTrace = {
-        x: data.historical_dates,
-        y: data.historical_cases,
-        type: 'scatter',
-        mode: 'lines+markers',
-        name: 'Historical Cases',
-        line: { color: '#0ea5e9', width: 3 }, // Updated color to sky-500
-        marker: { size: 6 }
-    };
-    
-    const forecastTrace = {
-        x: data.forecast_dates,
-        y: data.predicted_cases,
-        type: 'scatter',
-        mode: 'lines+markers',
-        name: 'Forecasted Cases',
-        line: { color: '#f43f5e', width: 3, dash: 'dash' }, // Updated color to rose-500
-        marker: { size: 8, symbol: 'diamond' }
-    };
-    
-    const layout = {
-        xaxis: { 
-            title: 'Date',
-            showgrid: true,
-            gridcolor: '#e2e8f0' // slate-200
-        },
-        yaxis: { 
-            title: 'Number of Cases',
-            showgrid: true,
-            gridcolor: '#e2e8f0' // slate-200
-        },
-        hovermode: 'x unified',
-        plot_bgcolor: 'white',
-        paper_bgcolor: 'white',
-        font: { family: 'Inter, sans-serif', size: 12, color: '#64748b' },
-        title: { font: { size: 16, color: '#1e293b' }}, // slate-800
-        margin: { l: 60, r: 30, t: 40, b: 60 },
-        showlegend: true,
-        legend: { x: 0.01, y: 0.98, bgcolor: 'rgba(255,255,255,0.6)' }
-    };
-    
-    // The container ID is now the first argument
-    Plotly.newPlot(forecastChartContainer, [historicalTrace, forecastTrace], layout, {responsive: true});
+async function plotForecastChart(data) {
+    // Get the chart container and clear it
+    const chartDiv = document.getElementById('forecastChart');
+    chartDiv.innerHTML = '';
+
+    // Create a SciChartSurface
+    const { sciChartSurface, wasmContext } = await SciChart.SciChartSurface.create(chartDiv);
+
+    // --- Styling & Theme ---
+    const gridStroke = "#e2e8f0"; // slate-200
+    const axisTextColor = "#64748b"; // slate-500
+
+    // Create X and Y Axes
+    sciChartSurface.xAxes.add(new SciChart.DateTimeNumericAxis(wasmContext, {
+        axisTitle: "Date",
+        drawMajorGridLines: true,
+        majorGridLineStyle: { stroke: gridStroke },
+        tickLabelStyle: { color: axisTextColor }
+    }));
+    sciChartSurface.yAxes.add(new SciChart.NumericAxis(wasmContext, {
+        axisTitle: "Number of Cases",
+        drawMajorGridLines: true,
+        majorGridLineStyle: { stroke: gridStroke },
+        tickLabelStyle: { color: axisTextColor }
+    }));
+
+    // --- Data Series ---
+    // SciChart requires date values as numbers (timestamps)
+    const historicalDates = data.historical_dates.map(d => new Date(d).getTime());
+    const forecastDates = data.forecast_dates.map(d => new Date(d).getTime());
+
+    // Create Data Series for historical and forecast data
+    const historicalSeries = new SciChart.XyDataSeries(wasmContext, {
+        xValues: historicalDates,
+        yValues: data.historical_cases,
+        dataSeriesName: "Historical Cases"
+    });
+
+    const forecastSeries = new SciChart.XyDataSeries(wasmContext, {
+        xValues: forecastDates,
+        yValues: data.predicted_cases,
+        dataSeriesName: "Forecasted Cases"
+    });
+
+    // --- Renderable Series (The actual lines on the chart) ---
+    sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
+        dataSeries: historicalSeries,
+        stroke: "#0ea5e9", // sky-500
+        strokeThickness: 3,
+        pointMarker: new SciChart.EllipsePointMarker(wasmContext, { width: 7, height: 7, fill: "#0ea5e9", stroke: "white", strokeThickness: 1 })
+    }));
+
+    sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
+        dataSeries: forecastSeries,
+        stroke: "#f43f5e", // rose-500
+        strokeThickness: 3,
+        strokeDashArray: [10, 5],
+        pointMarker: new SciChart.EllipsePointMarker(wasmContext, { width: 7, height: 7, fill: "#f43f5e", stroke: "white", strokeThickness: 1 })
+    }));
+
+    // --- Interactivity and Legends ---
+    sciChartSurface.chartModifiers.add(new SciChart.LegendModifier({ showCheckboxes: false }));
+    sciChartSurface.chartModifiers.add(new SciChart.ZoomPanModifier());
+    sciChartSurface.chartModifiers.add(new SciChart.MouseWheelZoomModifier());
+    sciChartSurface.chartModifiers.add(new SciChart.RolloverModifier({ showTooltip: true }));
+
+    // Zoom to fit the data
+    sciChartSurface.zoomExtents();
 }
 
 // Load and plot climate data
@@ -369,7 +376,7 @@ async function loadClimateData(disease) {
             return;
         }
         
-        plotClimateChart(data);
+        await plotClimateChart(data); // Await the async function
         
     } catch (error) {
         console.error('Error loading climate data:', error);
@@ -377,76 +384,75 @@ async function loadClimateData(disease) {
 }
 
 // Plot climate chart
-function plotClimateChart(data) {
-    // ---> FIX: Get the container and remove loader-specific classes
-    const climateChartContainer = document.getElementById('climateChart');
-    climateChartContainer.classList.remove('flex', 'items-center', 'justify-center');
+async function plotClimateChart(data) {
+    const chartDiv = document.getElementById('climateChart');
+    chartDiv.innerHTML = '';
+    
+    const { sciChartSurface, wasmContext } = await SciChart.SciChartSurface.create(chartDiv);
+    const gridStroke = "#e2e8f0";
 
-    const temperatureTrace = {
-        x: data.dates,
-        y: data.temperature,
-        type: 'scatter',
-        mode: 'lines',
-        name: 'Temperature (°C)',
-        line: { color: '#f43f5e', width: 2 }, // rose-500
-        yaxis: 'y'
-    };
+    // --- Axes (Multi-axis setup) ---
+    // X-Axis (Date)
+    sciChartSurface.xAxes.add(new SciChart.DateTimeNumericAxis(wasmContext, { id: "dateAxis" }));
     
-    const humidityTrace = {
-        x: data.dates,
-        y: data.humidity,
-        type: 'scatter',
-        mode: 'lines',
-        name: 'Humidity (%)',
-        line: { color: '#16a34a', width: 2 }, // green-600
-        yaxis: 'y2'
-    };
+    // Y-Axis 1 (Temperature) - Aligned Left
+    sciChartSurface.yAxes.add(new SciChart.NumericAxis(wasmContext, {
+        id: "tempAxis",
+        axisTitle: "Temperature (°C)",
+        axisAlignment: SciChart.EAxisAlignment.Left,
+        tickLabelStyle: { color: "#f43f5e" }
+    }));
+
+    // Y-Axis 2 (Humidity) - Aligned Right
+    sciChartSurface.yAxes.add(new SciChart.NumericAxis(wasmContext, {
+        id: "humidityAxis",
+        axisTitle: "Humidity (%)",
+        axisAlignment: SciChart.EAxisAlignment.Right,
+        tickLabelStyle: { color: "#16a34a" }
+    }));
+
+    // Y-Axis 3 (Rainfall) - Aligned Right
+    sciChartSurface.yAxes.add(new SciChart.NumericAxis(wasmContext, {
+        id: "rainfallAxis",
+        axisTitle: "Rainfall (mm)",
+        axisAlignment: SciChart.EAxisAlignment.Right,
+        growBy: new SciChart.NumberRange(0.1, 0.1), // Add some padding
+        tickLabelStyle: { color: "#3b82f6" }
+    }));
+
+    // --- Data Series ---
+    const climateDates = data.dates.map(d => new Date(d).getTime());
     
-    const rainfallTrace = {
-        x: data.dates,
-        y: data.rainfall,
-        type: 'bar',
-        name: 'Rainfall (mm)',
-        marker: { color: '#3b82f6' }, // blue-500
-        yaxis: 'y3'
-    };
+    const tempSeries = new SciChart.XyDataSeries(wasmContext, { xValues: climateDates, yValues: data.temperature, dataSeriesName: "Temperature (°C)" });
+    const humiditySeries = new SciChart.XyDataSeries(wasmContext, { xValues: climateDates, yValues: data.humidity, dataSeriesName: "Humidity (%)" });
+    const rainfallSeries = new SciChart.XyDataSeries(wasmContext, { xValues: climateDates, yValues: data.rainfall, dataSeriesName: "Rainfall (mm)" });
+
+    // --- Renderable Series (linking data to axes) ---
+    sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
+        dataSeries: tempSeries,
+        yAxisId: "tempAxis",
+        stroke: "#f43f5e",
+        strokeThickness: 2
+    }));
+
+    sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
+        dataSeries: humiditySeries,
+        yAxisId: "humidityAxis",
+        stroke: "#16a34a",
+        strokeThickness: 2
+    }));
+
+    sciChartSurface.renderableSeries.add(new SciChart.FastColumnRenderableSeries(wasmContext, {
+        dataSeries: rainfallSeries,
+        yAxisId: "rainfallAxis",
+        fill: "#3b82f677", // blue-500 with some transparency
+        stroke: "#3b82f6"
+    }));
     
-    const layout = {
-        xaxis: { 
-            title: 'Date',
-            domain: [0, 1]
-        },
-        yaxis: {
-            title: 'Temp (°C)',
-            titlefont: { color: '#f43f5e' },
-            tickfont: { color: '#f43f5e' }
-        },
-        yaxis2: {
-            title: 'Humidity (%)',
-            titlefont: { color: '#16a34a' },
-            tickfont: { color: '#16a34a' },
-            overlaying: 'y',
-            side: 'right'
-        },
-        yaxis3: {
-            title: 'Rainfall (mm)',
-            titlefont: { color: '#3b82f6' },
-            tickfont: { color: '#3b82f6' },
-            overlaying: 'y',
-            side: 'right',
-            anchor: 'free',
-            position: 0.95,
-            showgrid: false
-        },
-        plot_bgcolor: 'white',
-        paper_bgcolor: 'white',
-        font: { family: 'Inter, sans-serif', size: 12, color: '#64748b' },
-        title: { font: { size: 16, color: '#1e293b' }},
-        margin: { l: 60, r: 120, t: 40, b: 60 }, // Increased right margin for 3rd axis
-        showlegend: true,
-        legend: { x: 0.01, y: 0.98, bgcolor: 'rgba(255,255,255,0.6)' }
-    };
-    
-    // The container ID is now the first argument
-    Plotly.newPlot(climateChartContainer, [temperatureTrace, humidityTrace, rainfallTrace], layout, {responsive: true});
+    // --- Interactivity and Legends ---
+    sciChartSurface.chartModifiers.add(new SciChart.LegendModifier({ showCheckboxes: false, orientation: SciChart.ELegendOrientation.Horizontal, placement: SciChart.ELegendPlacement.TopLeft }));
+    sciChartSurface.chartModifiers.add(new SciChart.ZoomPanModifier());
+    sciChartSurface.chartModifiers.add(new SciChart.MouseWheelZoomModifier());
+
+    sciChartSurface.zoomExtents();
 }
