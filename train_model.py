@@ -60,7 +60,7 @@ def train_model(disease='Dengue', model_type='LSTM'):
     
     # Train model
     print("Training model...")
-    model_dir = os.path.join(os.path.dirname(__file__), '..', 'app', 'models')
+    model_dir = os.path.join(os.path.dirname(__file__), 'app', 'models')
     os.makedirs(model_dir, exist_ok=True)
     model_path = os.path.join(model_dir, f'{disease.lower()}_forecast_model.h5')
     

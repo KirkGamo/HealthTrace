@@ -113,6 +113,10 @@ class DiseaseOutbreakModel:
     
     def load_model(self, filepath):
         """Load model from file"""
-        self.model = tf.keras.models.load_model(filepath)
+        import tensorflow as tf
+        # Use compile=False to avoid metrics deserialization issues
+        self.model = tf.keras.models.load_model(filepath, compile=False)
+        # Recompile with current metrics
+        self.model.compile(optimizer='adam', loss='mse', metrics=['mae'])
         print(f"Model loaded from {filepath}")
         return self.model
