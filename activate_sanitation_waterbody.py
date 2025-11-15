@@ -1,0 +1,35 @@
+import shutil
+import os
+
+print("Activating Sanitation/Water Body enhanced data...\n")
+
+diseases = ['dengue', 'typhoid', 'cholera']
+
+for disease in diseases:
+    print(f"Processing {disease}...")
+    
+    # Paths
+    current_file = f'app/data/{disease}_historical_data.csv'
+    backup_file = f'app/data/{disease}_23feat_backup.csv'
+    new_file = f'app/data/{disease}_historical_data_with_sanwater.csv'
+    
+    # Backup current 23-feature data
+    if os.path.exists(current_file):
+        print(f"  Backing up current data to {backup_file}")
+        shutil.copy(current_file, backup_file)
+    
+    # Replace with 41-feature data
+    print(f"  Activating 41-feature data from {new_file}")
+    shutil.copy(new_file, current_file)
+    
+    print(f"  ✓ {disease} data updated\n")
+
+print("="*60)
+print("ACTIVATION COMPLETE")
+print("="*60)
+print("\n✓ All disease datasets now use 41-feature data (23 + 18 sanitation/water body)")
+print("✓ Previous 23-feature data backed up as *_23feat_backup.csv")
+print("\nNext steps:")
+print("1. Update config.py CLIMATE_FEATURES list")
+print("2. Update app/data_utils.py feature extraction")
+print("3. Retrain models with 41 features")
