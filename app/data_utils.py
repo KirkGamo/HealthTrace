@@ -23,12 +23,13 @@ class DataProcessor:
             # Original synthetic data format
             feature_columns = ['temperature', 'humidity', 'rainfall', 'disease_cases']
         else:
-            # CCHAIN enhanced data format
+            # CCHAIN enhanced data format with atmosphere features
             # Select available features, fallback if some are missing
             available_features = []
             for col in ['precipitation', 'spi3', 'spi6', 'precip_anomaly', 
                        'precipitation_7day', 'precipitation_30day',
-                       'pop_count_total', 'pop_density_mean', 'avg_rad_mean']:
+                       'pop_count_total', 'pop_density_mean', 'avg_rad_mean',
+                       'tmin', 'tmax', 'tave', 'temp_range', 'tave_7day', 'tave_30day']:
                 if col in df.columns:
                     available_features.append(col)
             

@@ -39,9 +39,11 @@ def initialize_models():
             
             # Read data to get feature count
             df = pd.read_csv(data_file)
-            # Determine feature columns (all except 'date')
+            # Determine feature columns (all except 'date' and including disease_cases for target)
+            # The model expects all columns as input features during prediction
             feature_cols = [col for col in df.columns if col != 'date']
-            n_features = len(feature_cols)
+            # n_features is the number of input columns (which includes disease_cases as last column)
+            n_features = len(feature_cols) - 1  # Subtract 1 because disease_cases is target, not input
             
             # Initialize model
             model = DiseaseOutbreakModel(
