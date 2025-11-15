@@ -15,9 +15,10 @@ class Config:
     # Diseases to track (based on CCHAIN Project data for Iloilo City)
     DISEASES = ['Dengue', 'Typhoid', 'Cholera']
     
-    # Features for prediction (CCHAIN enhanced data format with atmosphere features)
+    # Features for prediction (CCHAIN full feature set: climate + socioeconomic + environmental)
     CLIMATE_FEATURES = ['precipitation', 'spi3', 'spi6', 'precip_anomaly', 
                        'precipitation_7day', 'precipitation_30day',
                        'pop_count_total', 'pop_density_mean', 'avg_rad_mean',
-                       'tmin', 'tmax', 'tave', 'temp_range', 'tave_7day', 'tave_30day']
+                       'tmin', 'tmax', 'tave', 'temp_range', 'tave_7day', 'tave_30day',
+                       'no2', 'co', 'so2', 'o3', 'pm10', 'pm25', 'ndvi']
     HEALTH_FEATURES = ['disease_cases']
