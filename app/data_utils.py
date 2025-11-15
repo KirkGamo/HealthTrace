@@ -17,10 +17,48 @@ class DataProcessor:
         return df
     
     def prepare_features(self, df):
-        """Prepare features for model input"""
-        # Select relevant features
-        feature_columns = ['temperature', 'humidity', 'rainfall', 'disease_cases']
-        features = df[feature_columns].values
+        """Prepare features for model input - supports CCHAIN data format"""
+        # Check which feature columns are available
+        if 'temperature' in df.columns:
+            # Original synthetic data format
+            feature_columns = ['temperature', 'humidity', 'rainfall', 'disease_cases']
+        else:
+            # CCHAIN full feature set: climate + socioeconomic + environmental + sanitation/water + healthcare/wealth
+            # Select available features, fallback if some are missing 
+            available_features = []
+            for col in ['precipitation', 'spi3', 'spi6', 'precip_anomaly', 
+                       'precipitation_7day', 'precipitation_30day',
+                       'pop_count_total', 'pop_density_mean', 'avg_rad_mean',
+                       'tmin', 'tmax', 'tave', 'temp_range', 'tave_7day', 'tave_30day',
+                       'no2', 'co', 'so2', 'o3', 'pm10', 'pm25', 'ndvi',
+                       'drinking_water_count', 'drinking_water_nearest',
+                       'water_well_count', 'water_well_nearest',
+                       'toilet_count', 'toilet_nearest',
+                       'waste_basket_count', 'waste_basket_nearest',
+                       'wastewater_plant_count', 'wastewater_plant_nearest',
+                       'osm_wetland_nearest', 'osm_reservoir_nearest',
+                       'osm_water_nearest', 'osm_riverbank_nearest',
+                       'osm_river_nearest', 'osm_stream_nearest',
+                       'osm_canal_nearest', 'osm_drain_nearest',
+                       'clinic_count', 'clinic_nearest',
+                       'hospital_count', 'hospital_nearest',
+                       'pharmacy_count', 'pharmacy_nearest',
+                       'doctors_count', 'doctors_nearest',
+                       'rwi_mean', 'rwi_median', 'rwi_std']:
+                if col in df.columns:
+                    available_features.append(col)
+            
+            # Always include disease_cases as the last feature
+            if 'disease_cases' in df.columns:
+                available_features.append('disease_cases')
+            
+            feature_columns = available_features
+        
+        # Handle missing values
+        df_clean = df[feature_columns].copy()
+        df_clean = df_clean.ffill().bfill().fillna(0)
+        
+        features = df_clean.values
         
         # Normalize features
         scaled_features = self.scaler.fit_transform(features)
@@ -42,7 +80,9 @@ class DataProcessor:
     def inverse_transform_predictions(self, predictions):
         """Convert normalized predictions back to original scale"""
         # Create dummy array with same shape as original features
-        dummy = np.zeros((len(predictions), 4))
+        # Get the number of features from the scaler
+        n_features = self.scaler.n_features_in_
+        dummy = np.zeros((len(predictions), n_features))
         dummy[:, -1] = predictions.flatten()
         
         # Inverse transform

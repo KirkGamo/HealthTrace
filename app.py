@@ -31,10 +31,24 @@ def initialize_models():
             # Initialize data processor
             data_processors[disease] = DataProcessor(sequence_length=Config.SEQUENCE_LENGTH)
             
+            # Load sample data to determine feature count
+            data_file = os.path.join(Config.DATA_PATH, f'{disease.lower()}_historical_data.csv')
+            if not os.path.exists(data_file):
+                print(f"✗ {disease} data file not found at {data_file}")
+                continue
+            
+            # Read data to get feature count
+            df = pd.read_csv(data_file)
+            # Determine feature columns (all except 'date' and including disease_cases for target)
+            # The model expects all columns as input features during prediction
+            feature_cols = [col for col in df.columns if col != 'date']
+            # n_features is the number of input columns (which includes disease_cases as last column)
+            n_features = len(feature_cols) - 1  # Subtract 1 because disease_cases is target, not input
+            
             # Initialize model
             model = DiseaseOutbreakModel(
                 sequence_length=Config.SEQUENCE_LENGTH,
-                n_features=4,
+                n_features=n_features,
                 model_type='LSTM'
             )
             
@@ -44,7 +58,7 @@ def initialize_models():
             if os.path.exists(model_path):
                 model.load_model(model_path)
                 models[disease] = model
-                print(f"✓ {disease} model loaded")
+                print(f"✓ {disease} model loaded ({n_features} features)")
             else:
                 print(f"✗ {disease} model not found at {model_path}")
                 
@@ -188,11 +202,28 @@ def get_climate_data(disease):
         df_recent = df.tail(30)
         
         response = {
-            'dates': df_recent['date'].dt.strftime('%Y-%m-%d').tolist(),
-            'temperature': df_recent['temperature'].round(1).tolist(),
-            'humidity': df_recent['humidity'].round(1).tolist(),
-            'rainfall': df_recent['rainfall'].round(1).tolist()
+            'dates': df_recent['date'].dt.strftime('%Y-%m-%d').tolist()
         }
+        
+        # Add available climate features (CCHAIN format)
+        if 'precipitation' in df_recent.columns:
+            response['precipitation'] = df_recent['precipitation'].round(2).tolist()
+        if 'precipitation_7day' in df_recent.columns:
+            response['precipitation_7day'] = df_recent['precipitation_7day'].round(2).tolist()
+        if 'precipitation_30day' in df_recent.columns:
+            response['precipitation_30day'] = df_recent['precipitation_30day'].round(2).tolist()
+        if 'spi3' in df_recent.columns:
+            response['spi3'] = df_recent['spi3'].round(2).tolist()
+        if 'precip_anomaly' in df_recent.columns:
+            response['precip_anomaly'] = df_recent['precip_anomaly'].round(2).tolist()
+        
+        # Legacy format support
+        if 'temperature' in df_recent.columns:
+            response['temperature'] = df_recent['temperature'].round(1).tolist()
+        if 'humidity' in df_recent.columns:
+            response['humidity'] = df_recent['humidity'].round(1).tolist()
+        if 'rainfall' in df_recent.columns:
+            response['rainfall'] = df_recent['rainfall'].round(1).tolist()
         
         return jsonify(response)
         

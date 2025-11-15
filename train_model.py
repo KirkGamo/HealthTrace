@@ -21,11 +21,11 @@ def train_model(disease='Dengue', model_type='LSTM'):
     # Data file path
     data_file = os.path.join(Config.DATA_PATH, f'{disease.lower()}_historical_data.csv')
     
-    # Check if data exists, if not generate sample data
+    # Check if data exists, if not prompt to run data preparation
     if not os.path.exists(data_file):
-        print(f"Data file not found. Generating sample data...")
-        os.makedirs(Config.DATA_PATH, exist_ok=True)
-        data_processor.generate_sample_data(data_file, num_days=730)  # 2 years of data
+        print(f"ERROR: Data file not found: {data_file}")
+        print(f"Please run 'python prepare_cchain_data.py' first to process CCHAIN data.")
+        raise FileNotFoundError(f"Missing data file: {data_file}")
     
     # Load and prepare data
     print("Loading data...")
@@ -86,8 +86,14 @@ def train_model(disease='Dengue', model_type='LSTM'):
     return model, history
 
 if __name__ == '__main__':
-    # Train models for different diseases
-    diseases = ['Dengue', 'Influenza', 'Typhoid', 'Malaria']
+    # Train models for diseases available in CCHAIN data
+    diseases = Config.DISEASES  # ['Dengue', 'Typhoid', 'Cholera']
+    
+    print("\n" + "="*60)
+    print("HEALTHTRACE MODEL TRAINING - CCHAIN DATA")
+    print("Location: Iloilo City, Philippines")
+    print(f"Diseases: {', '.join(diseases)}")
+    print("="*60)
     
     for disease in diseases:
         print(f"\n{'='*60}")
@@ -96,10 +102,16 @@ if __name__ == '__main__':
         
         try:
             train_model(disease=disease, model_type='LSTM')
+        except FileNotFoundError as e:
+            print(f"\n{e}")
+            print("\nPlease run: python prepare_cchain_data.py")
+            break
         except Exception as e:
             print(f"Error training model for {disease}: {e}")
+            import traceback
+            traceback.print_exc()
             continue
     
     print("\n" + "="*60)
-    print("All models trained successfully!")
+    print("Model training complete!")
     print("="*60)
