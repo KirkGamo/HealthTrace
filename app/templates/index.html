@@ -1,84 +1,418 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="en" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HealthTrace - Disease Outbreak Forecasting System</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
-</head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🏥 HealthTrace</h1>
-            <p class="subtitle">Disease Outbreak Forecasting System for the Philippines</p>
-        </header>
 
-        <div class="alert-banner" id="alertBanner">
-            <span id="alertText">Loading data...</span>
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Alpine.js for interactivity -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+
+    <!-- Plotly for charts -->
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+
+    <!-- Optional: Add custom Google Font for a more professional feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <style>
+      /* A little custom CSS for a professional font and to hide scrollbars elegantly */
+      body {
+        font-family: "Inter", sans-serif;
+      }
+      /* You can keep minimal custom styles here if needed, especially for third-party libraries like Plotly */
+    </style>
+  </head>
+  <body class="bg-slate-100 text-slate-800">
+    <!-- Navigation Header -->
+    <nav x-data="{ open: false }" class="bg-white shadow-md sticky top-0 z-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex items-center justify-between h-16">
+          <!-- Logo and Branding -->
+          <div class="flex-shrink-0 flex items-center">
+            <svg
+              class="h-8 w-8 text-sky-600"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"
+              ></path>
+              <path d="M12 8v8"></path>
+              <path d="M8 12h8"></path>
+            </svg>
+            <span class="ml-2 text-xl font-bold text-slate-800"
+              >HealthTrace</span
+            >
+          </div>
+
+          <!-- Desktop Navigation Links -->
+          <div class="hidden md:block">
+            <div class="ml-10 flex items-baseline space-x-4">
+              <a
+                href="#"
+                class="bg-sky-100 text-sky-700 px-3 py-2 rounded-md text-sm font-medium"
+                aria-current="page"
+                >Dashboard</a
+              >
+              <a
+                href="#"
+                class="text-slate-500 hover:bg-slate-100 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium"
+                >Reports</a
+              >
+              <a
+                href="#"
+                class="text-slate-500 hover:bg-slate-100 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium"
+                >Alerts</a
+              >
+              <a
+                href="#"
+                class="text-slate-500 hover:bg-slate-100 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium"
+                >Settings</a
+              >
+            </div>
+          </div>
+
+          <!-- Mobile Menu Button -->
+          <div class="md:hidden flex items-center">
+            <button
+              @click="open = !open"
+              type="button"
+              class="inline-flex items-center justify-center p-2 rounded-md text-slate-400 hover:text-slate-500 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-sky-500"
+              aria-controls="mobile-menu"
+              aria-expanded="false"
+            >
+              <span class="sr-only">Open main menu</span>
+              <svg
+                x-show="!open"
+                class="block h-6 w-6"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+              <svg
+                x-show="open"
+                class="block h-6 w-6"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Menu -->
+      <div
+        x-show="open"
+        @click.away="open = false"
+        x-transition
+        class="md:hidden"
+        id="mobile-menu"
+      >
+        <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+          <a
+            href="#"
+            class="bg-sky-100 text-sky-700 block px-3 py-2 rounded-md text-base font-medium"
+            aria-current="page"
+            >Dashboard</a
+          >
+          <a
+            href="#"
+            class="text-slate-500 hover:bg-slate-100 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium"
+            >Reports</a
+          >
+          <a
+            href="#"
+            class="text-slate-500 hover:bg-slate-100 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium"
+            >Alerts</a
+          >
+          <a
+            href="#"
+            class="text-slate-500 hover:bg-slate-100 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium"
+            >Settings</a
+          >
+        </div>
+      </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <!-- Alert Banner -->
+      <div class="rounded-md bg-sky-50 p-4 mb-8" id="alertBanner">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <svg
+              class="h-5 w-5 text-sky-400"
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </div>
+          <div class="ml-3 flex-1 md:flex md:justify-between">
+            <p class="text-sm text-sky-700" id="alertText">Loading data...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Current Status Section -->
+      <section class="mb-8">
+        <h2 class="text-2xl font-bold text-slate-900 mb-4">
+          Current Disease Status
+        </h2>
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          id="statusGrid"
+        >
+          <div class="bg-white p-5 rounded-lg shadow-sm animate-pulse">
+            <div class="h-4 bg-slate-200 rounded w-3/4 mb-4"></div>
+            <div class="h-8 bg-slate-300 rounded w-1/2 mb-2"></div>
+            <div class="h-3 bg-slate-200 rounded w-full mb-4"></div>
+            <div class="h-6 bg-slate-200 rounded-full w-28"></div>
+          </div>
+          <div class="bg-white p-5 rounded-lg shadow-sm animate-pulse">
+            <div class="h-4 bg-slate-200 rounded w-3/4 mb-4"></div>
+            <div class="h-8 bg-slate-300 rounded w-1/2 mb-2"></div>
+            <div class="h-3 bg-slate-200 rounded w-full mb-4"></div>
+            <div class="h-6 bg-slate-200 rounded-full w-28"></div>
+          </div>
+          <div class="bg-white p-5 rounded-lg shadow-sm animate-pulse">
+            <div class="h-4 bg-slate-200 rounded w-3/4 mb-4"></div>
+            <div class="h-8 bg-slate-300 rounded w-1/2 mb-2"></div>
+            <div class="h-3 bg-slate-200 rounded w-full mb-4"></div>
+            <div class="h-6 bg-slate-200 rounded-full w-28"></div>
+          </div>
+          <div class="bg-white p-5 rounded-lg shadow-sm animate-pulse">
+            <div class="h-4 bg-slate-200 rounded w-3/4 mb-4"></div>
+            <div class="h-8 bg-slate-300 rounded w-1/2 mb-2"></div>
+            <div class="h-3 bg-slate-200 rounded w-full mb-4"></div>
+            <div class="h-6 bg-slate-200 rounded-full w-28"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Disease Selector Section -->
+      <section class="mb-8 bg-white p-6 rounded-lg shadow-sm">
+        <h2 class="text-2xl font-bold text-slate-900 mb-4">
+          Select Disease for Detailed Forecast
+        </h2>
+        <div class="flex flex-wrap gap-3" id="diseaseButtonsContainer">
+          {% for disease in diseases %}
+          <button
+            class="disease-btn px-4 py-2 text-sm font-semibold border border-slate-300 rounded-full hover:bg-slate-100 focus:ring-2 focus:ring-sky-500 focus:outline-none transition-colors"
+            data-disease="{{ disease }}"
+          >
+            {{ disease }}
+          </button>
+          {% endfor %}
+        </div>
+      </section>
+
+      <!-- Forecast Analysis Section -->
+      <section class="bg-white p-6 rounded-lg shadow-sm">
+        <h2 class="text-2xl font-bold text-slate-900 mb-4">
+          Forecast Analysis -
+          <span id="selectedDisease" class="text-sky-700"
+            >Select a disease</span
+          >
+        </h2>
+
+        <div
+          id="alertBox"
+          style="display: none"
+          class="rounded-md p-4 mb-6 border-l-4"
+        >
+          <div class="flex items-center">
+            <div class="alert-icon text-2xl mr-4">⚠️</div>
+            <div>
+              <h3 id="alertLevel" class="font-bold">Alert Level</h3>
+              <p id="alertMessage" class="text-sm">Alert message</p>
+            </div>
+          </div>
         </div>
 
-        <section class="current-status">
-            <h2>Current Disease Status</h2>
-            <div class="status-grid" id="statusGrid">
-                <!-- Status cards will be inserted here -->
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-6">
+          <!-- Charts taking up 3/5 of the width -->
+          <div class="lg:col-span-3 space-y-6">
+            <div class="p-4 border rounded-lg bg-white">
+              <h3 class="font-semibold mb-2">
+                Disease Cases Forecast (14-Day Outlook)
+              </h3>
+              <div
+                id="forecastChart"
+                class="min-h-[300px] flex items-center justify-center"
+              >
+                <!-- Chart Loading Indicator -->
+                <div class="text-center text-slate-500 chart-loader">
+                  <svg
+                    class="animate-spin h-8 w-8 text-sky-600 mx-auto mb-2"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <p>Select a disease to view forecast</p>
+                </div>
+              </div>
             </div>
-        </section>
-
-        <section class="disease-selector">
-            <h2>Select Disease for Detailed Forecast</h2>
-            <div class="disease-buttons">
-                {% for disease in diseases %}
-                <button class="disease-btn" data-disease="{{ disease }}">{{ disease }}</button>
-                {% endfor %}
+            <div class="p-4 border rounded-lg bg-white">
+              <h3 class="font-semibold mb-2">Climate Factors (Last 30 Days)</h3>
+              <div
+                id="climateChart"
+                class="min-h-[300px] flex items-center justify-center"
+              >
+                <!-- Chart Loading Indicator -->
+                <div class="text-center text-slate-500 chart-loader">
+                  <svg
+                    class="animate-spin h-8 w-8 text-sky-600 mx-auto mb-2"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                  <p>Loading climate data...</p>
+                </div>
+              </div>
             </div>
-        </section>
-
-        <section class="forecast-section">
-            <h2>Forecast Analysis - <span id="selectedDisease">Select a disease</span></h2>
-            
-            <div class="alert-box" id="alertBox" style="display: none;">
-                <div class="alert-icon">⚠️</div>
-                <div class="alert-content">
-                    <h3 id="alertLevel">Alert Level</h3>
-                    <p id="alertMessage">Alert message</p>
-                </div>
+          </div>
+          <!-- Statistics taking up 2/5 of the width -->
+          <div class="lg:col-span-2 space-y-6">
+            <div class="bg-slate-50 p-4 rounded-lg text-center">
+              <h4 class="text-sm font-medium text-slate-500 mb-1">
+                Forecast Period
+              </h4>
+              <p id="forecastPeriod" class="text-xl font-semibold">-</p>
             </div>
-
-            <div class="charts-container">
-                <div class="chart-box">
-                    <h3>Disease Cases Forecast (14-Day Outlook)</h3>
-                    <div id="forecastChart"></div>
-                </div>
-
-                <div class="chart-box">
-                    <h3>Climate Factors (Last 30 Days)</h3>
-                    <div id="climateChart"></div>
-                </div>
+            <div class="bg-slate-50 p-4 rounded-lg text-center">
+              <h4 class="text-sm font-medium text-slate-500 mb-1">
+                Peak Cases Expected
+              </h4>
+              <p id="peakCases" class="text-xl font-semibold">-</p>
             </div>
-
-            <div class="statistics">
-                <div class="stat-card">
-                    <h4>Forecast Period</h4>
-                    <p id="forecastPeriod">-</p>
-                </div>
-                <div class="stat-card">
-                    <h4>Peak Cases Expected</h4>
-                    <p id="peakCases">-</p>
-                </div>
-                <div class="stat-card">
-                    <h4>Last Updated</h4>
-                    <p id="lastUpdated">-</p>
-                </div>
+            <div class="bg-slate-50 p-4 rounded-lg text-center">
+              <h4 class="text-sm font-medium text-slate-500 mb-1">
+                Last Updated
+              </h4>
+              <p id="lastUpdated" class="text-xl font-semibold">-</p>
             </div>
-        </section>
+          </div>
+        </div>
+                  <div class="mt-8">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-xl font-bold text-slate-900">
+                Forecast Data Details
+              </h3>
+              <button
+                id="exportCsvBtn"
+                class="invisible bg-sky-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-sky-700 transition-colors disabled:bg-slate-300 disabled:cursor-not-allowed"
+              >
+                Export as CSV
+              </button>
+            </div>
+            <div class="bg-white border rounded-lg shadow-sm overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm text-left text-slate-500">
+                  <thead class="text-xs text-slate-700 uppercase bg-slate-50">
+                    <tr>
+                      <th scope="col" class="px-6 py-3">Date</th>
+                      <th scope="col" class="px-6 py-3 text-right">
+                        Predicted Cases
+                      </th>
+                      <th scope="col" class="px-6 py-3 text-center">Trend</th>
+                    </tr>
+                  </thead>
+                  <tbody id="forecastDataTableBody">
+                    <!-- JS will insert a loading state and then the data here -->
+                    <tr>
+                      <td colspan="3" class="text-center p-6">
+                        <div class="text-slate-500">
+                          Select a disease to view detailed data.
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+      </section>
+    </main>
 
-        <footer>
-            <p>HealthTrace © 2024 | Powered by TensorFlow & LSTM Deep Learning</p>
-            <p class="disclaimer">This is a forecasting tool for educational purposes. Always consult healthcare professionals for medical advice.</p>
-        </footer>
-    </div>
+    <footer class="mt-12 bg-slate-800 text-white py-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <p>HealthTrace © 2024 | Powered by TensorFlow & LSTM Deep Learning</p>
+        <p class="text-xs text-slate-400 mt-2">
+          This is a forecasting tool for educational purposes. Always consult
+          healthcare professionals for medical advice.
+        </p>
+      </div>
+    </footer>
 
     <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
-</body>
+  </body>
 </html>

@@ -1,6 +1,7 @@
 // Dashboard JavaScript for Disease Outbreak Forecasting
 
 let currentDisease = null;
+let currentForecastData = null;
 
 // Initialize dashboard on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -51,12 +52,34 @@ function createStatusCard(disease) {
     `;
     
     return card;
+}function createStatusCard(disease) {
+    const card = document.createElement('div');
+    // Added transition classes for smooth hover effect
+    card.className = 'bg-white p-5 rounded-lg shadow-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1';
+    
+    const isIncreasing = disease.trend === 'increasing';
+    const trendColor = isIncreasing ? 'red' : 'green';
+    // Using inline SVGs for icons is efficient and requires no external files.
+    const trendIcon = isIncreasing 
+        ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12 1.5a.75.75 0 01.75.75V11.25l1.97-1.97a.75.75 0 111.06 1.06l-3.25 3.25a.75.75 0 01-1.06 0L8.22 10.34a.75.75 0 111.06-1.06l1.97 1.97V2.25A.75.75 0 0112 1.5z" clip-rule="evenodd" /></svg>`
+        : `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 18.5a.75.75 0 01-.75-.75V8.75L5.28 10.72a.75.75 0 01-1.06-1.06l3.25-3.25a.75.75 0 011.06 0l3.25 3.25a.75.75 0 11-1.06 1.06L9.75 8.75v9A.75.75 0 018 18.5z" clip-rule="evenodd" /></svg>`;
+
+    card.innerHTML = `
+        <h3 class="text-md font-semibold text-slate-600">${disease.disease}</h3>
+        <p class="text-3xl font-bold text-slate-900 my-1">${disease.current_cases}</p>
+        <p class="text-xs text-slate-400 mb-3">cases reported on ${disease.date}</p>
+        <div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm font-medium bg-${trendColor}-100 text-${trendColor}-800">
+            ${trendIcon}
+            <span>${disease.trend}</span>
+        </div>
+    `;
+    
+    return card;
 }
 
 // Update alert banner based on current status
 function updateAlertBanner(data) {
     const alertBanner = document.getElementById('alertBanner');
-    const alertText = document.getElementById('alertText');
     
     let highestCases = 0;
     let criticalDisease = '';
@@ -67,38 +90,71 @@ function updateAlertBanner(data) {
             criticalDisease = disease.disease;
         }
     });
-    
+
+    let alertConfig = {};
+
     if (highestCases > 100) {
-        alertBanner.style.background = '#ff6b6b';
-        alertBanner.style.color = 'white';
-        alertText.textContent = `⚠️ High Alert: ${criticalDisease} cases at ${highestCases}. Monitor closely.`;
+        alertConfig = {
+            level: 'High',
+            bgColor: 'bg-red-100',
+            textColor: 'text-red-800',
+            iconColor: 'text-red-400',
+            icon: `<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>`,
+            message: `<strong>High Alert:</strong> ${criticalDisease} cases are at a critical level of ${highestCases}. Monitor closely.`
+        };
     } else if (highestCases > 50) {
-        alertBanner.style.background = '#ffc107';
-        alertBanner.style.color = '#333';
-        alertText.textContent = `⚡ Moderate Alert: ${criticalDisease} cases at ${highestCases}. Stay vigilant.`;
+        alertConfig = {
+            level: 'Medium',
+            bgColor: 'bg-yellow-100',
+            textColor: 'text-yellow-800',
+            iconColor: 'text-yellow-400',
+            icon: `<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.636-1.214 2.47-1.214 3.106 0l4.594 8.75c.603 1.148-.22 2.593-1.553 2.593H5.216c-1.333 0-2.156-1.445-1.553-2.593l4.594-8.75zM10 14a1 1 0 100-2 1 1 0 000 2zm-1-3a1 1 0 011-1h.008a1 1 0 011 1v1a1 1 0 01-1 1h-.008a1 1 0 01-1-1v-1z" clip-rule="evenodd" /></svg>`,
+            message: `<strong>Moderate Alert:</strong> ${criticalDisease} cases have reached ${highestCases}. Stay vigilant.`
+        };
     } else {
-        alertBanner.style.background = '#51cf66';
-        alertBanner.style.color = 'white';
-        alertText.textContent = '✅ All diseases under control. Continue monitoring.';
+        alertConfig = {
+            level: 'Low',
+            bgColor: 'bg-green-100',
+            textColor: 'text-green-800',
+            iconColor: 'text-green-400',
+            icon: `<svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" /></svg>`,
+            message: '<strong>All Clear:</strong> All diseases are currently under control. Continue routine monitoring.'
+        };
     }
+
+    alertBanner.className = `rounded-md p-4 mb-8 ${alertConfig.bgColor}`;
+    alertBanner.innerHTML = `
+        <div class="flex">
+            <div class="flex-shrink-0 ${alertConfig.iconColor}">
+                ${alertConfig.icon}
+            </div>
+            <div class="ml-3">
+                <p class="text-sm ${alertConfig.textColor}" id="alertText">
+                    ${alertConfig.message}
+                </p>
+            </div>
+        </div>
+    `;
 }
 
-// Setup disease selection buttons
 function setupDiseaseButtons() {
-    const buttons = document.querySelectorAll('.disease-btn');
-    
-    buttons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove active class from all buttons
-            buttons.forEach(btn => btn.classList.remove('active'));
-            
-            // Add active class to clicked button
-            this.classList.add('active');
-            
-            // Load forecast for selected disease
-            const disease = this.getAttribute('data-disease');
-            loadDiseaseForecasts(disease);
-        });
+    // The container for the buttons
+    const container = document.getElementById('diseaseButtonsContainer');
+    // Use event delegation for efficiency
+    container.addEventListener('click', function(event) {
+        // Check if a button was clicked
+        const button = event.target.closest('.disease-btn');
+        if (!button) return;
+
+        // Remove active class from all buttons in the container
+        container.querySelectorAll('.disease-btn').forEach(btn => btn.classList.remove('active'));
+        
+        // Add active class to the clicked button
+        button.classList.add('active');
+        
+        // Load forecast for the selected disease
+        const disease = button.getAttribute('data-disease');
+        loadDiseaseForecasts(disease);
     });
 }
 
@@ -106,7 +162,12 @@ function setupDiseaseButtons() {
 async function loadDiseaseForecasts(disease) {
     currentDisease = disease;
     document.getElementById('selectedDisease').textContent = disease;
-    
+
+    // Show loading indicators for charts
+    const forecastChartDiv = document.getElementById('forecastChart');
+    const climateChartDiv = document.getElementById('climateChart');
+    forecastChartDiv.innerHTML = `<div class="text-center text-slate-500 chart-loader"><svg class="animate-spin h-8 w-8 text-sky-600 mx-auto mb-2" ...></svg><p>Loading forecast...</p></div>`; // Use the full SVG from index.html here for brevity
+    climateChartDiv.innerHTML = `<div class="text-center text-slate-500 chart-loader"><svg class="animate-spin h-8 w-8 text-sky-600 mx-auto mb-2" ...></svg><p>Loading climate data...</p></div>`;    
     try {
         // Load forecast data
         const forecastResponse = await fetch(`/api/forecast/${disease}`);
@@ -116,6 +177,8 @@ async function loadDiseaseForecasts(disease) {
             alert(`Error: ${forecastData.error}`);
             return;
         }
+
+        currentForecastData = forecastData;
         
         // Update alert box
         updateAlertBox(forecastData);
@@ -125,6 +188,10 @@ async function loadDiseaseForecasts(disease) {
         
         // Plot forecast chart
         plotForecastChart(forecastData);
+
+        renderDataTable(forecastData); // <-- ADD THIS NEW function call
+
+        setupExportButton();
         
         // Load and plot climate data
         loadClimateData(disease);
@@ -133,6 +200,79 @@ async function loadDiseaseForecasts(disease) {
         console.error('Error loading forecast:', error);
         alert('Error loading forecast data. Please try again.');
     }
+}
+
+// ADD THIS NEW FUNCTION to render the data table
+function renderDataTable(data) {
+    const tableBody = document.getElementById('forecastDataTableBody');
+    tableBody.innerHTML = ''; // Clear previous data
+
+    if (!data || !data.forecast_dates || data.forecast_dates.length === 0) {
+        tableBody.innerHTML = `<tr><td colspan="3" class="text-center p-6">No forecast data available.</td></tr>`;
+        return;
+    }
+
+    let previousCase = data.historical_cases[data.historical_cases.length - 1] || 0;
+
+    data.forecast_dates.forEach((date, index) => {
+        const cases = data.predicted_cases[index];
+        const isIncreasing = cases > previousCase;
+        const trendColor = isIncreasing ? 'text-red-500' : 'text-green-500';
+        const trendIcon = isIncreasing
+            ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.22 14.78a.75.75 0 001.06 0l7.22-7.22v5.69a.75.75 0 001.5 0v-7.5a.75.75 0 00-.75-.75h-7.5a.75.75 0 000 1.5h5.69l-7.22 7.22a.75.75 0 000 1.06z" clip-rule="evenodd" /></svg>`
+            : `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline-block" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M14.78 5.22a.75.75 0 00-1.06 0l-7.22 7.22v-5.69a.75.75 0 00-1.5 0v7.5a.75.75 0 00.75.75h7.5a.75.75 0 000-1.5h-5.69l7.22-7.22a.75.75 0 000-1.06z" clip-rule="evenodd" /></svg>`;
+
+        const row = `
+            <tr class="bg-white border-b hover:bg-slate-50">
+                <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap">${date}</td>
+                <td class="px-6 py-4 text-right">${cases}</td>
+                <td class="px-6 py-4 text-center ${trendColor}">
+                    ${trendIcon}
+                </td>
+            </tr>
+        `;
+        tableBody.insertAdjacentHTML('beforeend', row);
+        previousCase = cases;
+    });
+}
+
+// ADD THIS NEW FUNCTION to handle the export button
+function setupExportButton() {
+    const button = document.getElementById('exportCsvBtn');
+    if (currentForecastData) {
+        button.classList.remove('invisible');
+        button.disabled = false;
+        
+        // Clone and replace to remove old event listeners
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        newButton.addEventListener('click', () => {
+            exportDataToCSV(currentForecastData);
+        });
+    } else {
+        button.classList.add('invisible');
+        button.disabled = true;
+    }
+}
+
+// ADD THIS NEW FUNCTION to generate and download the CSV
+function exportDataToCSV(data) {
+    let csvContent = "data:text/csv;charset=utf-8,";
+    csvContent += "Date,Predicted_Cases\n"; // Header
+
+    data.forecast_dates.forEach((date, index) => {
+        const cases = data.predicted_cases[index];
+        csvContent += `${date},${cases}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `${currentDisease}_forecast.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 // Update alert box
@@ -169,13 +309,17 @@ function updateStatistics(data) {
 
 // Plot forecast chart
 function plotForecastChart(data) {
+    // ---> FIX: Get the container and remove loader-specific classes
+    const forecastChartContainer = document.getElementById('forecastChart');
+    forecastChartContainer.classList.remove('flex', 'items-center', 'justify-center');
+    
     const historicalTrace = {
         x: data.historical_dates,
         y: data.historical_cases,
         type: 'scatter',
         mode: 'lines+markers',
         name: 'Historical Cases',
-        line: { color: '#667eea', width: 3 },
+        line: { color: '#0ea5e9', width: 3 }, // Updated color to sky-500
         marker: { size: 6 }
     };
     
@@ -185,7 +329,7 @@ function plotForecastChart(data) {
         type: 'scatter',
         mode: 'lines+markers',
         name: 'Forecasted Cases',
-        line: { color: '#ff6b6b', width: 3, dash: 'dash' },
+        line: { color: '#f43f5e', width: 3, dash: 'dash' }, // Updated color to rose-500
         marker: { size: 8, symbol: 'diamond' }
     };
     
@@ -193,23 +337,25 @@ function plotForecastChart(data) {
         xaxis: { 
             title: 'Date',
             showgrid: true,
-            gridcolor: '#e0e0e0'
+            gridcolor: '#e2e8f0' // slate-200
         },
         yaxis: { 
             title: 'Number of Cases',
             showgrid: true,
-            gridcolor: '#e0e0e0'
+            gridcolor: '#e2e8f0' // slate-200
         },
         hovermode: 'x unified',
-        plot_bgcolor: '#f8f9fa',
+        plot_bgcolor: 'white',
         paper_bgcolor: 'white',
-        font: { family: 'Segoe UI, sans-serif' },
-        margin: { l: 60, r: 30, t: 30, b: 60 },
+        font: { family: 'Inter, sans-serif', size: 12, color: '#64748b' },
+        title: { font: { size: 16, color: '#1e293b' }}, // slate-800
+        margin: { l: 60, r: 30, t: 40, b: 60 },
         showlegend: true,
-        legend: { x: 0.02, y: 0.98 }
+        legend: { x: 0.01, y: 0.98, bgcolor: 'rgba(255,255,255,0.6)' }
     };
     
-    Plotly.newPlot('forecastChart', [historicalTrace, forecastTrace], layout, {responsive: true});
+    // The container ID is now the first argument
+    Plotly.newPlot(forecastChartContainer, [historicalTrace, forecastTrace], layout, {responsive: true});
 }
 
 // Load and plot climate data
@@ -232,13 +378,17 @@ async function loadClimateData(disease) {
 
 // Plot climate chart
 function plotClimateChart(data) {
+    // ---> FIX: Get the container and remove loader-specific classes
+    const climateChartContainer = document.getElementById('climateChart');
+    climateChartContainer.classList.remove('flex', 'items-center', 'justify-center');
+
     const temperatureTrace = {
         x: data.dates,
         y: data.temperature,
         type: 'scatter',
         mode: 'lines',
         name: 'Temperature (°C)',
-        line: { color: '#ff6b6b', width: 2 },
+        line: { color: '#f43f5e', width: 2 }, // rose-500
         yaxis: 'y'
     };
     
@@ -248,7 +398,7 @@ function plotClimateChart(data) {
         type: 'scatter',
         mode: 'lines',
         name: 'Humidity (%)',
-        line: { color: '#51cf66', width: 2 },
+        line: { color: '#16a34a', width: 2 }, // green-600
         yaxis: 'y2'
     };
     
@@ -257,7 +407,7 @@ function plotClimateChart(data) {
         y: data.rainfall,
         type: 'bar',
         name: 'Rainfall (mm)',
-        marker: { color: '#339af0' },
+        marker: { color: '#3b82f6' }, // blue-500
         yaxis: 'y3'
     };
     
@@ -267,33 +417,36 @@ function plotClimateChart(data) {
             domain: [0, 1]
         },
         yaxis: {
-            title: 'Temperature (°C)',
-            titlefont: { color: '#ff6b6b' },
-            tickfont: { color: '#ff6b6b' }
+            title: 'Temp (°C)',
+            titlefont: { color: '#f43f5e' },
+            tickfont: { color: '#f43f5e' }
         },
         yaxis2: {
             title: 'Humidity (%)',
-            titlefont: { color: '#51cf66' },
-            tickfont: { color: '#51cf66' },
+            titlefont: { color: '#16a34a' },
+            tickfont: { color: '#16a34a' },
             overlaying: 'y',
             side: 'right'
         },
         yaxis3: {
             title: 'Rainfall (mm)',
-            titlefont: { color: '#339af0' },
-            tickfont: { color: '#339af0' },
+            titlefont: { color: '#3b82f6' },
+            tickfont: { color: '#3b82f6' },
             overlaying: 'y',
             side: 'right',
             anchor: 'free',
-            position: 0.95
+            position: 0.95,
+            showgrid: false
         },
-        plot_bgcolor: '#f8f9fa',
+        plot_bgcolor: 'white',
         paper_bgcolor: 'white',
-        font: { family: 'Segoe UI, sans-serif' },
-        margin: { l: 60, r: 100, t: 30, b: 60 },
+        font: { family: 'Inter, sans-serif', size: 12, color: '#64748b' },
+        title: { font: { size: 16, color: '#1e293b' }},
+        margin: { l: 60, r: 120, t: 40, b: 60 }, // Increased right margin for 3rd axis
         showlegend: true,
-        legend: { x: 0.02, y: 0.98 }
+        legend: { x: 0.01, y: 0.98, bgcolor: 'rgba(255,255,255,0.6)' }
     };
     
-    Plotly.newPlot('climateChart', [temperatureTrace, humidityTrace, rainfallTrace], layout, {responsive: true});
+    // The container ID is now the first argument
+    Plotly.newPlot(climateChartContainer, [temperatureTrace, humidityTrace, rainfallTrace], layout, {responsive: true});
 }
