@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HealthTrace - Disease Outbreak Forecasting System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🏥 HealthTrace</h1>
+            <p class="subtitle">Disease Outbreak Forecasting System for the Philippines</p>
+        </header>
+
+        <div class="alert-banner" id="alertBanner">
+            <span id="alertText">Loading data...</span>
+        </div>
+
+        <section class="current-status">
+            <h2>Current Disease Status</h2>
+            <div class="status-grid" id="statusGrid">
+                <!-- Status cards will be inserted here -->
+            </div>
+        </section>
+
+        <section class="disease-selector">
+            <h2>Select Disease for Detailed Forecast</h2>
+            <div class="disease-buttons">
+                {% for disease in diseases %}
+                <button class="disease-btn" data-disease="{{ disease }}">{{ disease }}</button>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="forecast-section">
+            <h2>Forecast Analysis - <span id="selectedDisease">Select a disease</span></h2>
+            
+            <div class="alert-box" id="alertBox" style="display: none;">
+                <div class="alert-icon">⚠️</div>
+                <div class="alert-content">
+                    <h3 id="alertLevel">Alert Level</h3>
+                    <p id="alertMessage">Alert message</p>
+                </div>
+            </div>
+
+            <div class="charts-container">
+                <div class="chart-box">
+                    <h3>Disease Cases Forecast (14-Day Outlook)</h3>
+                    <div id="forecastChart"></div>
+                </div>
+
+                <div class="chart-box">
+                    <h3>Climate Factors (Last 30 Days)</h3>
+                    <div id="climateChart"></div>
+                </div>
+            </div>
+
+            <div class="statistics">
+                <div class="stat-card">
+                    <h4>Forecast Period</h4>
+                    <p id="forecastPeriod">-</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Peak Cases Expected</h4>
+                    <p id="peakCases">-</p>
+                </div>
+                <div class="stat-card">
+                    <h4>Last Updated</h4>
+                    <p id="lastUpdated">-</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>HealthTrace © 2024 | Powered by TensorFlow & LSTM Deep Learning</p>
+            <p class="disclaimer">This is a forecasting tool for educational purposes. Always consult healthcare professionals for medical advice.</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
