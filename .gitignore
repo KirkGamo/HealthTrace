@@ -37,9 +37,7 @@ venv.bak/
 *.swo
 *~
 
-# TensorFlow/Keras
-*.h5
-*.hdf5
+# TensorFlow/Keras (exclude trained models in app/models)
 saved_models/
 checkpoints/
 
