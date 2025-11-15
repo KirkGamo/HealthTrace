@@ -12,9 +12,11 @@ class Config:
     MODEL_PATH = os.path.join(os.path.dirname(__file__), 'app', 'models', 'disease_forecast_model.h5')
     DATA_PATH = os.path.join(os.path.dirname(__file__), 'app', 'data')
     
-    # Diseases to track
-    DISEASES = ['Dengue', 'Influenza', 'Typhoid', 'Malaria']
+    # Diseases to track (based on CCHAIN Project data for Iloilo City)
+    DISEASES = ['Dengue', 'Typhoid', 'Cholera']
     
-    # Features for prediction
-    CLIMATE_FEATURES = ['temperature', 'humidity', 'rainfall']
+    # Features for prediction (CCHAIN enhanced data format)
+    CLIMATE_FEATURES = ['precipitation', 'spi3', 'spi6', 'precip_anomaly', 
+                       'precipitation_7day', 'precipitation_30day',
+                       'pop_count_total', 'pop_density_mean', 'avg_rad_mean']
     HEALTH_FEATURES = ['disease_cases']
