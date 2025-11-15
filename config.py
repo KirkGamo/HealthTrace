@@ -15,7 +15,7 @@ class Config:
     # Diseases to track (based on CCHAIN Project data for Iloilo City)
     DISEASES = ['Dengue', 'Typhoid', 'Cholera']
     
-    # Features for prediction (CCHAIN full feature set: climate + socioeconomic + environmental + sanitation/water)
+    # Features for prediction (CCHAIN full feature set: climate + socioeconomic + environmental + sanitation/water + healthcare/wealth)
     CLIMATE_FEATURES = ['precipitation', 'spi3', 'spi6', 'precip_anomaly', 
                        'precipitation_7day', 'precipitation_30day',
                        'pop_count_total', 'pop_density_mean', 'avg_rad_mean',
@@ -29,5 +29,10 @@ class Config:
                        'osm_wetland_nearest', 'osm_reservoir_nearest',
                        'osm_water_nearest', 'osm_riverbank_nearest',
                        'osm_river_nearest', 'osm_stream_nearest',
-                       'osm_canal_nearest', 'osm_drain_nearest']
+                       'osm_canal_nearest', 'osm_drain_nearest',
+                       'clinic_count', 'clinic_nearest',
+                       'hospital_count', 'hospital_nearest',
+                       'pharmacy_count', 'pharmacy_nearest',
+                       'doctors_count', 'doctors_nearest',
+                       'rwi_mean', 'rwi_median', 'rwi_std']
     HEALTH_FEATURES = ['disease_cases']

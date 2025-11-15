@@ -23,8 +23,8 @@ class DataProcessor:
             # Original synthetic data format
             feature_columns = ['temperature', 'humidity', 'rainfall', 'disease_cases']
         else:
-            # CCHAIN full feature set: climate + socioeconomic + environmental + sanitation/water
-            # Select available features, fallback if some are missing
+            # CCHAIN full feature set: climate + socioeconomic + environmental + sanitation/water + healthcare/wealth
+            # Select available features, fallback if some are missing 
             available_features = []
             for col in ['precipitation', 'spi3', 'spi6', 'precip_anomaly', 
                        'precipitation_7day', 'precipitation_30day',
@@ -39,7 +39,12 @@ class DataProcessor:
                        'osm_wetland_nearest', 'osm_reservoir_nearest',
                        'osm_water_nearest', 'osm_riverbank_nearest',
                        'osm_river_nearest', 'osm_stream_nearest',
-                       'osm_canal_nearest', 'osm_drain_nearest']:
+                       'osm_canal_nearest', 'osm_drain_nearest',
+                       'clinic_count', 'clinic_nearest',
+                       'hospital_count', 'hospital_nearest',
+                       'pharmacy_count', 'pharmacy_nearest',
+                       'doctors_count', 'doctors_nearest',
+                       'rwi_mean', 'rwi_median', 'rwi_std']:
                 if col in df.columns:
                     available_features.append(col)
             
