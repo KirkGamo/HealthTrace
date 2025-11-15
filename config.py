@@ -13,7 +13,7 @@ class Config:
     DATA_PATH = os.path.join(os.path.dirname(__file__), 'app', 'data')
     
     # Diseases to track (based on CCHAIN Project data for Iloilo City)
-    DISEASES = ['Dengue', 'Typhoid', 'Cholera']
+    DISEASES = ['Dengue', 'Typhoid', 'Leptospirosis']
     
     # Features for prediction (CCHAIN full feature set: climate + socioeconomic + environmental + sanitation/water + healthcare/wealth)
     CLIMATE_FEATURES = ['precipitation', 'spi3', 'spi6', 'precip_anomaly', 
