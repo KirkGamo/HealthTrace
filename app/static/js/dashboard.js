@@ -183,6 +183,9 @@ async function loadDiseaseForecasts(disease) {
         // Load and plot climate data
         await loadClimateData(disease);
         
+        // Load and display feature factors
+        await loadFeatureFactors(disease);
+        
     } catch (error) {
         console.error('Error loading forecast:', error);
         alert('Error loading forecast data. Please try again.');
@@ -363,6 +366,88 @@ async function plotForecastChart(data) {
 
     // Zoom to fit the data
     sciChartSurface.zoomExtents();
+}
+
+// Load and display feature factors
+async function loadFeatureFactors(disease) {
+    try {
+        const response = await fetch(`/api/feature_factors/${disease}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            console.error('Feature factors error:', data.error);
+            return;
+        }
+        
+        displayFeatureFactors(data);
+        
+    } catch (error) {
+        console.error('Error loading feature factors:', error);
+    }
+}
+
+// Display feature factors organized by category
+function displayFeatureFactors(data) {
+    const container = document.getElementById('featureFactorsContainer');
+    container.innerHTML = '';
+    
+    if (!data.categories || data.categories.length === 0) {
+        container.innerHTML = '<div class="text-center text-slate-500 py-8"><p>No factor data available</p></div>';
+        return;
+    }
+    
+    // Create cards for each category
+    data.categories.forEach(category => {
+        const categoryCard = document.createElement('div');
+        categoryCard.className = 'bg-white border border-slate-200 rounded-lg p-6 shadow-sm';
+        
+        // Category header
+        const header = document.createElement('h4');
+        header.className = 'text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200';
+        header.textContent = category.name;
+        categoryCard.appendChild(header);
+        
+        // Create grid for factors
+        const factorsGrid = document.createElement('div');
+        factorsGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+        
+        category.factors.forEach(factor => {
+            const factorItem = document.createElement('div');
+            factorItem.className = 'bg-slate-50 rounded-lg p-4 hover:bg-slate-100 transition-colors';
+            
+            // Format the value based on type
+            let displayValue = factor.value.toFixed(2);
+            
+            // Add units based on factor type
+            let unit = '';
+            if (factor.raw_name.includes('temp') || factor.raw_name.includes('tmin') || factor.raw_name.includes('tmax') || factor.raw_name.includes('tave')) {
+                unit = '°C';
+            } else if (factor.raw_name.includes('precipitation') || factor.raw_name.includes('rainfall')) {
+                unit = ' mm';
+            } else if (factor.raw_name.includes('humidity')) {
+                unit = '%';
+            } else if (factor.raw_name.includes('nearest')) {
+                unit = ' m';
+                displayValue = factor.value.toFixed(0);
+            } else if (factor.raw_name.includes('count')) {
+                displayValue = factor.value.toFixed(0);
+            } else if (factor.raw_name.includes('density')) {
+                unit = ' /km²';
+            } else if (factor.raw_name.includes('pm')) {
+                unit = ' μg/m³';
+            }
+            
+            factorItem.innerHTML = `
+                <div class="text-sm text-slate-600 mb-1">${factor.name}</div>
+                <div class="text-2xl font-bold text-slate-900">${displayValue}${unit}</div>
+            `;
+            
+            factorsGrid.appendChild(factorItem);
+        });
+        
+        categoryCard.appendChild(factorsGrid);
+        container.appendChild(categoryCard);
+    });
 }
 
 // Load and plot climate data
