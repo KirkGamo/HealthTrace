@@ -301,25 +301,39 @@ def get_climate_data(disease):
             'dates': df_recent['date'].dt.strftime('%Y-%m-%d').tolist()
         }
         
-        # Add available climate features (CCHAIN format)
-        if 'precipitation' in df_recent.columns:
-            response['precipitation'] = df_recent['precipitation'].round(2).tolist()
-        if 'precipitation_7day' in df_recent.columns:
-            response['precipitation_7day'] = df_recent['precipitation_7day'].round(2).tolist()
-        if 'precipitation_30day' in df_recent.columns:
-            response['precipitation_30day'] = df_recent['precipitation_30day'].round(2).tolist()
-        if 'spi3' in df_recent.columns:
-            response['spi3'] = df_recent['spi3'].round(2).tolist()
-        if 'precip_anomaly' in df_recent.columns:
-            response['precip_anomaly'] = df_recent['precip_anomaly'].round(2).tolist()
+        # Map CCHAIN format columns to expected format
+        # Temperature (use tave as temperature)
+        if 'tave' in df_recent.columns:
+            response['temperature'] = df_recent['tave'].fillna(0).round(1).tolist()
+        elif 'temperature' in df_recent.columns:
+            response['temperature'] = df_recent['temperature'].fillna(0).round(1).tolist()
         
-        # Legacy format support
-        if 'temperature' in df_recent.columns:
-            response['temperature'] = df_recent['temperature'].round(1).tolist()
+        # Humidity - calculate from available data or use default
         if 'humidity' in df_recent.columns:
-            response['humidity'] = df_recent['humidity'].round(1).tolist()
-        if 'rainfall' in df_recent.columns:
-            response['rainfall'] = df_recent['rainfall'].round(1).tolist()
+            response['humidity'] = df_recent['humidity'].fillna(0).round(1).tolist()
+        else:
+            # Use a placeholder based on precipitation
+            response['humidity'] = [50.0] * len(df_recent)
+        
+        # Rainfall (use precipitation as rainfall)
+        if 'precipitation' in df_recent.columns:
+            response['rainfall'] = df_recent['precipitation'].fillna(0).round(1).tolist()
+        elif 'pr' in df_recent.columns:
+            response['rainfall'] = df_recent['pr'].fillna(0).round(1).tolist()
+        elif 'rainfall' in df_recent.columns:
+            response['rainfall'] = df_recent['rainfall'].fillna(0).round(1).tolist()
+        
+        # Add available climate features (CCHAIN format) - optional
+        if 'precipitation' in df_recent.columns:
+            response['precipitation'] = df_recent['precipitation'].fillna(0).round(2).tolist()
+        if 'precipitation_7day' in df_recent.columns:
+            response['precipitation_7day'] = df_recent['precipitation_7day'].fillna(0).round(2).tolist()
+        if 'precipitation_30day' in df_recent.columns:
+            response['precipitation_30day'] = df_recent['precipitation_30day'].fillna(0).round(2).tolist()
+        if 'spi3' in df_recent.columns:
+            response['spi3'] = df_recent['spi3'].fillna(0).round(2).tolist()
+        if 'precip_anomaly' in df_recent.columns:
+            response['precip_anomaly'] = df_recent['precip_anomaly'].fillna(0).round(2).tolist()
         
         return jsonify(response)
         
@@ -328,7 +342,7 @@ def get_climate_data(disease):
 
 @app.route('/api/feature_factors/<disease>')
 def get_feature_factors(disease):
-    """Get time-series feature values organized by category for charting"""
+    """Get feature importance/correlation data organized by category"""
     
     if disease not in Config.DISEASES:
         return jsonify({'error': 'Disease not found'}), 404
@@ -340,6 +354,20 @@ def get_feature_factors(disease):
             return jsonify({'error': 'Data not found'}), 404
         
         df = pd.read_csv(data_file, parse_dates=['date'])
+        
+        # Calculate correlation with disease cases
+        target_col = 'disease_cases'  # Column name is always 'disease_cases'
+        if target_col not in df.columns:
+            return jsonify({'error': 'Disease cases column not found'}), 404
+        
+        # Get correlations for all numeric features
+        correlations = {}
+        for col in df.columns:
+            if col not in ['date', target_col] and pd.api.types.is_numeric_dtype(df[col]):
+                # Calculate Pearson correlation
+                corr = df[col].corr(df[target_col])
+                if not pd.isna(corr):
+                    correlations[col] = abs(corr)  # Use absolute value to show strength regardless of direction
         
         # Get last 30 days for time-series display
         df_recent = df.tail(30)
@@ -422,10 +450,9 @@ def get_feature_factors(disease):
             }
         }
         
-        # Populate time-series data for each category
+        # Populate correlation data for each category
         response = {
             'disease': disease,
-            'dates': df_recent['date'].dt.strftime('%Y-%m-%d').tolist(),
             'categories': []
         }
         
@@ -436,24 +463,27 @@ def get_feature_factors(disease):
             }
             
             for feature in category_data['features']:
-                if feature in df_recent.columns:
-                    values = df_recent[feature].fillna(0).tolist()
-                    
+                if feature in correlations:
                     # Format feature name for display
                     display_name = feature.replace('_', ' ').title()
                     
                     # Get unit from unit_map
                     unit = category_data['unit_map'].get(feature, '')
                     
+                    # Get correlation value
+                    impact = correlations[feature]
+                    
                     category_result['features'].append({
                         'name': display_name,
                         'raw_name': feature,
-                        'values': values,
+                        'impact': float(impact),  # Correlation strength (0-1)
+                        'impact_percentage': float(impact * 100),  # As percentage
                         'unit': unit
                     })
             
-            # Only add category if it has data
+            # Sort features by impact (highest first)
             if category_result['features']:
+                category_result['features'].sort(key=lambda x: x['impact'], reverse=True)
                 response['categories'].append(category_result)
         
         return jsonify(response)
