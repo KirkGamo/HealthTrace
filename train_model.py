@@ -62,7 +62,8 @@ def train_model(disease='Dengue', model_type='LSTM'):
     print("Training model...")
     model_dir = os.path.join(os.path.dirname(__file__), 'app', 'models')
     os.makedirs(model_dir, exist_ok=True)
-    model_path = os.path.join(model_dir, f'{disease.lower()}_forecast_model.h5')
+    model_suffix = 'lstm' if model_type == 'LSTM' else 'gru'
+    model_path = os.path.join(model_dir, f'{disease.lower()}_forecast_{model_suffix}.h5')
     
     history = model.train(
         X_train, y_train,
@@ -87,30 +88,33 @@ def train_model(disease='Dengue', model_type='LSTM'):
 
 if __name__ == '__main__':
     # Train models for diseases available in CCHAIN data
-    diseases = Config.DISEASES  # ['Dengue', 'Typhoid', 'Cholera']
+    diseases = Config.DISEASES  # ['Dengue', 'Typhoid', 'Leptospirosis']
+    model_types = ['LSTM', 'GRU']  # Train both architectures
     
     print("\n" + "="*60)
     print("HEALTHTRACE MODEL TRAINING - CCHAIN DATA")
     print("Location: Iloilo City, Philippines")
     print(f"Diseases: {', '.join(diseases)}")
+    print(f"Model Types: {', '.join(model_types)}")
     print("="*60)
     
-    for disease in diseases:
-        print(f"\n{'='*60}")
-        print(f"Training model for {disease}")
-        print(f"{'='*60}\n")
-        
-        try:
-            train_model(disease=disease, model_type='LSTM')
-        except FileNotFoundError as e:
-            print(f"\n{e}")
-            print("\nPlease run: python prepare_cchain_data.py")
-            break
-        except Exception as e:
-            print(f"Error training model for {disease}: {e}")
-            import traceback
-            traceback.print_exc()
-            continue
+    for model_type in model_types:
+        for disease in diseases:
+            print(f"\n{'='*60}")
+            print(f"Training {model_type} model for {disease}")
+            print(f"{'='*60}\n")
+            
+            try:
+                train_model(disease=disease, model_type=model_type)
+            except FileNotFoundError as e:
+                print(f"\n{e}")
+                print("\nPlease run: python prepare_cchain_data.py")
+                break
+            except Exception as e:
+                print(f"Error training {model_type} model for {disease}: {e}")
+                import traceback
+                traceback.print_exc()
+                continue
     
     print("\n" + "="*60)
     print("Model training complete!")

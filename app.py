@@ -19,11 +19,12 @@ app = Flask(__name__,
 app.config.from_object(Config)
 
 # Global variables to store models and data processors
-models = {}
+models_lstm = {}
+models_gru = {}
 data_processors = {}
 
 def initialize_models():
-    """Initialize models for all diseases"""
+    """Initialize both LSTM and GRU models for all diseases"""
     print("Initializing models...")
     
     for disease in Config.DISEASES:
@@ -45,25 +46,40 @@ def initialize_models():
             # n_features is the number of input columns (which includes disease_cases as last column)
             n_features = len(feature_cols) - 1  # Subtract 1 because disease_cases is target, not input
             
-            # Initialize model
-            model = DiseaseOutbreakModel(
+            # Initialize and load LSTM model
+            lstm_model = DiseaseOutbreakModel(
                 sequence_length=Config.SEQUENCE_LENGTH,
                 n_features=n_features,
                 model_type='LSTM'
             )
             
-            # Load trained model
-            model_path = os.path.join('app', 'models', f'{disease.lower()}_forecast_model.h5')
+            lstm_path = os.path.join('app', 'models', f'{disease.lower()}_forecast_lstm.h5')
             
-            if os.path.exists(model_path):
-                model.load_model(model_path)
-                models[disease] = model
-                print(f"✓ {disease} model loaded ({n_features} features)")
+            if os.path.exists(lstm_path):
+                lstm_model.load_model(lstm_path)
+                models_lstm[disease] = lstm_model
+                print(f"✓ {disease} LSTM model loaded ({n_features} features)")
             else:
-                print(f"✗ {disease} model not found at {model_path}")
+                print(f"✗ {disease} LSTM model not found at {lstm_path}")
+            
+            # Initialize and load GRU model
+            gru_model = DiseaseOutbreakModel(
+                sequence_length=Config.SEQUENCE_LENGTH,
+                n_features=n_features,
+                model_type='GRU'
+            )
+            
+            gru_path = os.path.join('app', 'models', f'{disease.lower()}_forecast_gru.h5')
+            
+            if os.path.exists(gru_path):
+                gru_model.load_model(gru_path)
+                models_gru[disease] = gru_model
+                print(f"✓ {disease} GRU model loaded ({n_features} features)")
+            else:
+                print(f"✗ {disease} GRU model not found at {gru_path}")
                 
         except Exception as e:
-            print(f"Error loading {disease} model: {e}")
+            print(f"Error loading {disease} models: {e}")
 
 @app.route('/')
 def index():
@@ -72,13 +88,21 @@ def index():
 
 @app.route('/api/forecast/<disease>')
 def get_forecast(disease):
-    """Get disease outbreak forecast"""
+    """Get disease outbreak forecast (defaults to LSTM)"""
+    model_type = request.args.get('model_type', 'lstm').lower()
     
     if disease not in Config.DISEASES:
         return jsonify({'error': 'Disease not found'}), 404
     
-    if disease not in models:
-        return jsonify({'error': f'{disease} model not loaded'}), 500
+    # Select model based on type
+    if model_type == 'gru':
+        if disease not in models_gru:
+            return jsonify({'error': f'{disease} GRU model not loaded'}), 500
+        model = models_gru[disease]
+    else:
+        if disease not in models_lstm:
+            return jsonify({'error': f'{disease} LSTM model not loaded'}), 500
+        model = models_lstm[disease]
     
     try:
         # Load historical data
@@ -95,8 +119,7 @@ def get_forecast(disease):
         # Get last sequence for prediction
         last_sequence = scaled_data[-Config.SEQUENCE_LENGTH:]
         
-        # Make forecast
-        model = models[disease]
+        # Make forecast (model already selected above)
         predictions = model.predict_future(last_sequence, n_days=Config.FORECAST_DAYS)
         
         # Inverse transform predictions
@@ -129,6 +152,7 @@ def get_forecast(disease):
         
         response = {
             'disease': disease,
+            'model_type': model_type.upper(),
             'forecast_dates': forecast_dates,
             'predicted_cases': [int(max(0, x)) for x in predicted_cases],
             'historical_dates': historical_dates,
@@ -151,7 +175,7 @@ def get_current_status():
     
     for disease in Config.DISEASES:
         try:
-            if disease not in models:
+            if disease not in models_lstm:
                 continue
             
             # Load historical data
@@ -182,6 +206,78 @@ def get_current_status():
             continue
     
     return jsonify(status_data)
+
+@app.route('/api/compare_models/<disease>')
+def compare_models(disease):
+    """Compare LSTM vs GRU predictions for a disease"""
+    
+    if disease not in Config.DISEASES:
+        return jsonify({'error': 'Disease not found'}), 404
+    
+    if disease not in models_lstm or disease not in models_gru:
+        return jsonify({'error': f'Both models not loaded for {disease}'}), 500
+    
+    try:
+        # Load historical data
+        data_file = os.path.join(Config.DATA_PATH, f'{disease.lower()}_historical_data.csv')
+        
+        if not os.path.exists(data_file):
+            return jsonify({'error': 'Historical data not found'}), 404
+        
+        # Process data
+        data_processor = data_processors[disease]
+        df = data_processor.load_data(data_file)
+        scaled_data = data_processor.prepare_features(df)
+        
+        # Get last sequence for prediction
+        last_sequence = scaled_data[-Config.SEQUENCE_LENGTH:]
+        
+        # Make LSTM forecast
+        lstm_model = models_lstm[disease]
+        lstm_predictions = lstm_model.predict_future(last_sequence, n_days=Config.FORECAST_DAYS)
+        lstm_cases = data_processor.inverse_transform_predictions(lstm_predictions)
+        
+        # Make GRU forecast
+        gru_model = models_gru[disease]
+        gru_predictions = gru_model.predict_future(last_sequence, n_days=Config.FORECAST_DAYS)
+        gru_cases = data_processor.inverse_transform_predictions(gru_predictions)
+        
+        # Prepare response
+        last_date = df['date'].iloc[-1]
+        forecast_dates = [
+            (last_date + timedelta(days=i+1)).strftime('%Y-%m-%d')
+            for i in range(Config.FORECAST_DAYS)
+        ]
+        
+        # Get historical data for context
+        historical_dates = df['date'].tail(30).dt.strftime('%Y-%m-%d').tolist()
+        historical_cases = df['disease_cases'].tail(30).tolist()
+        
+        # Calculate differences
+        differences = [abs(lstm - gru) for lstm, gru in zip(lstm_cases, gru_cases)]
+        avg_difference = np.mean(differences)
+        max_difference = np.max(differences)
+        
+        response = {
+            'disease': disease,
+            'forecast_dates': forecast_dates,
+            'lstm_predictions': [int(max(0, x)) for x in lstm_cases],
+            'gru_predictions': [int(max(0, x)) for x in gru_cases],
+            'historical_dates': historical_dates,
+            'historical_cases': historical_cases,
+            'comparison': {
+                'avg_difference': float(avg_difference),
+                'max_difference': float(max_difference),
+                'lstm_avg': float(np.mean(lstm_cases)),
+                'gru_avg': float(np.mean(gru_cases))
+            },
+            'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        }
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/climate_data/<disease>')
 def get_climate_data(disease):
