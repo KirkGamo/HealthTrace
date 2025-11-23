@@ -150,11 +150,16 @@ async function loadDiseaseForecasts(disease) {
     currentDisease = disease;
     document.getElementById('selectedDisease').textContent = disease;
 
-    // Show loading indicators for charts
+    // Show loading indicator for forecast chart
     const forecastChartDiv = document.getElementById('forecastChart');
-    const climateChartDiv = document.getElementById('climateChart');
-    forecastChartDiv.innerHTML = `<div class="text-center text-slate-500 chart-loader"><svg class="animate-spin h-8 w-8 text-sky-600 mx-auto mb-2" ...></svg><p>Loading forecast...</p></div>`; // Use the full SVG from index.html here for brevity
-    climateChartDiv.innerHTML = `<div class="text-center text-slate-500 chart-loader"><svg class="animate-spin h-8 w-8 text-sky-600 mx-auto mb-2" ...></svg><p>Loading climate data...</p></div>`;    
+    forecastChartDiv.innerHTML = `<div class="text-center text-slate-500 chart-loader">
+        <svg class="animate-spin h-8 w-8 text-sky-600 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <p>Loading forecast...</p>
+    </div>`;
+    
     try {
         // Load forecast data
         const forecastResponse = await fetch(`/api/forecast/${disease}`);
@@ -179,9 +184,6 @@ async function loadDiseaseForecasts(disease) {
         renderDataTable(forecastData); // <-- ADD THIS NEW function call
 
         setupExportButton();
-        
-        // Load and plot climate data
-        await loadClimateData(disease);
         
         // Load and display feature factors
         await loadFeatureFactors(disease);
@@ -376,162 +378,191 @@ async function loadFeatureFactors(disease) {
         
         if (data.error) {
             console.error('Feature factors error:', data.error);
+            const container = document.getElementById('featureFactorsContainer');
+            container.innerHTML = `<div class="text-center text-red-500 py-8"><p>Error: ${data.error}</p></div>`;
             return;
         }
         
-        await displayFeatureFactors(data);
+        displayFeatureFactors(data);
         
     } catch (error) {
         console.error('Error loading feature factors:', error);
+        const container = document.getElementById('featureFactorsContainer');
+        container.innerHTML = '<div class="text-center text-red-500 py-8"><p>Error loading feature impact data</p></div>';
     }
 }
 
-// Display feature factors organized by category with charts
+// Display feature factors organized by category with impact bars in tabs
 async function displayFeatureFactors(data) {
     const container = document.getElementById('featureFactorsContainer');
+    const tabsNav = document.getElementById('featureTabsNav');
+    
+    if (!container || !tabsNav) {
+        console.error('Required DOM elements not found');
+        return;
+    }
+    
     container.innerHTML = '';
     
     if (!data.categories || data.categories.length === 0) {
         container.innerHTML = '<div class="text-center text-slate-500 py-8"><p>No factor data available</p></div>';
+        tabsNav.classList.add('hidden');
         return;
     }
     
-    // Parse dates for charts
-    const dates = data.dates.map(d => new Date(d).getTime());
+    // Show tabs navigation
+    tabsNav.classList.remove('hidden');
     
-    // Create charts for each category
-    for (const category of data.categories) {
+    // Create tab buttons container
+    const nav = document.createElement('nav');
+    nav.className = 'flex flex-wrap gap-2';
+    nav.setAttribute('role', 'tablist');
+    
+    data.categories.forEach((category, index) => {
+        const tabButton = document.createElement('button');
+        tabButton.className = `px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+            index === 0 
+                ? 'bg-white text-sky-600 border-b-2 border-sky-600' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+        }`;
+        tabButton.setAttribute('role', 'tab');
+        tabButton.setAttribute('data-tab-index', index);
+        tabButton.textContent = category.name;
+        
+        tabButton.addEventListener('click', () => {
+            // Update active tab styling
+            nav.querySelectorAll('button').forEach(btn => {
+                btn.className = 'px-4 py-2 text-sm font-medium rounded-t-lg transition-colors text-slate-600 hover:text-slate-900 hover:bg-slate-50';
+            });
+            tabButton.className = 'px-4 py-2 text-sm font-medium rounded-t-lg transition-colors bg-white text-sky-600 border-b-2 border-sky-600';
+            
+            // Show corresponding content
+            showTabContent(index);
+        });
+        
+        nav.appendChild(tabButton);
+    });
+    
+    // Clear and add the nav to tabsNav
+    tabsNav.innerHTML = '';
+    tabsNav.appendChild(nav);
+    
+    // Create tab content panels
+    data.categories.forEach((category, index) => {
+        const tabPanel = document.createElement('div');
+        tabPanel.className = `feature-tab-panel ${index === 0 ? '' : 'hidden'}`;
+        tabPanel.setAttribute('data-panel-index', index);
+        
         const categoryCard = document.createElement('div');
         categoryCard.className = 'bg-white border border-slate-200 rounded-lg p-6 shadow-sm';
         
         // Category header
         const header = document.createElement('h4');
         header.className = 'text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200';
-        header.textContent = `${category.name} (Last 30 Days)`;
+        header.textContent = `${category.name} - Impact Analysis`;
         categoryCard.appendChild(header);
         
-        // Create chart container
-        const chartDiv = document.createElement('div');
-        chartDiv.className = 'feature-chart';
-        chartDiv.style.height = '300px';
-        chartDiv.id = `chart-${category.name.replace(/\s+/g, '-').toLowerCase()}`;
-        categoryCard.appendChild(chartDiv);
+        // Create bars container
+        const barsContainer = document.createElement('div');
+        barsContainer.className = 'space-y-3';
         
-        container.appendChild(categoryCard);
+        // Helper function to get color based on impact
+        const getColor = (impact) => {
+            if (impact >= 50) return { bg: 'bg-red-500', text: 'text-red-700', label: 'High' };
+            if (impact >= 30) return { bg: 'bg-orange-500', text: 'text-orange-700', label: 'Medium-High' };
+            if (impact >= 20) return { bg: 'bg-yellow-500', text: 'text-yellow-700', label: 'Medium' };
+            if (impact >= 10) return { bg: 'bg-blue-500', text: 'text-blue-700', label: 'Low-Medium' };
+            return { bg: 'bg-slate-400', text: 'text-slate-700', label: 'Low' };
+        };
         
-        // Plot the chart for this category
-        await plotFeatureChart(chartDiv, category, dates);
-    }
+        // Create bar for each feature
+        category.features.forEach(feature => {
+            const colorScheme = getColor(feature.impact_percentage);
+            
+            const barWrapper = document.createElement('div');
+            barWrapper.className = 'space-y-1';
+            
+            // Feature name and percentage
+            const labelRow = document.createElement('div');
+            labelRow.className = 'flex justify-between items-center text-sm';
+            labelRow.innerHTML = `
+                <span class="font-medium text-slate-700">${feature.name}</span>
+                <span class="${colorScheme.text} font-semibold">${feature.impact_percentage.toFixed(1)}%</span>
+            `;
+            barWrapper.appendChild(labelRow);
+            
+            // Progress bar
+            const barContainer = document.createElement('div');
+            barContainer.className = 'w-full bg-slate-100 rounded-full h-6 relative overflow-hidden';
+            
+            const bar = document.createElement('div');
+            bar.className = `${colorScheme.bg} h-6 rounded-full transition-all duration-500 flex items-center justify-end pr-2`;
+            bar.style.width = `${Math.max(feature.impact_percentage, 2)}%`; // Minimum 2% for visibility
+            
+            // Add impact label inside bar if wide enough
+            if (feature.impact_percentage > 15) {
+                const innerLabel = document.createElement('span');
+                innerLabel.className = 'text-white text-xs font-medium';
+                innerLabel.textContent = colorScheme.label;
+                bar.appendChild(innerLabel);
+            }
+            
+            barContainer.appendChild(bar);
+            barWrapper.appendChild(barContainer);
+            
+            // Correlation value (technical detail)
+            const corrDetail = document.createElement('div');
+            corrDetail.className = 'text-xs text-slate-500 pl-1';
+            corrDetail.textContent = `Correlation: ${feature.impact.toFixed(3)}`;
+            barWrapper.appendChild(corrDetail);
+            
+            barsContainer.appendChild(barWrapper);
+        });
+        
+        categoryCard.appendChild(barsContainer);
+        
+        // Add legend
+        const legendDiv = document.createElement('div');
+        legendDiv.className = 'flex flex-wrap items-center justify-center gap-3 mt-6 pt-4 border-t border-slate-200 text-xs text-slate-600';
+        legendDiv.innerHTML = `
+            <div class="flex items-center gap-1">
+                <div class="w-4 h-4 rounded bg-red-500"></div>
+                <span>High (≥50%)</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <div class="w-4 h-4 rounded bg-orange-500"></div>
+                <span>Medium-High (30-50%)</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <div class="w-4 h-4 rounded bg-yellow-500"></div>
+                <span>Medium (20-30%)</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <div class="w-4 h-4 rounded bg-blue-500"></div>
+                <span>Low-Medium (10-20%)</span>
+            </div>
+            <div class="flex items-center gap-1">
+                <div class="w-4 h-4 rounded bg-slate-400"></div>
+                <span>Low (<10%)</span>
+            </div>
+        `;
+        categoryCard.appendChild(legendDiv);
+        
+        tabPanel.appendChild(categoryCard);
+        container.appendChild(tabPanel);
+    });
 }
 
-// Plot feature chart for a category
-async function plotFeatureChart(chartDiv, category, dates) {
-    try {
-        const { sciChartSurface, wasmContext } = await SciChart.SciChartSurface.create(chartDiv);
-        const gridStroke = "#e2e8f0";
-        const axisTextColor = "#64748b";
-        
-        // Create axes
-        sciChartSurface.xAxes.add(new SciChart.DateTimeNumericAxis(wasmContext, {
-            drawMajorGridLines: true,
-            majorGridLineStyle: { stroke: gridStroke },
-            tickLabelStyle: { color: axisTextColor }
-        }));
-        
-        // Color palette for multiple features
-        const colors = [
-            "#0ea5e9", // sky-500
-            "#f43f5e", // rose-500
-            "#16a34a", // green-600
-            "#a855f7", // purple-500
-            "#f97316", // orange-500
-            "#06b6d4", // cyan-500
-            "#eab308", // yellow-500
-            "#ec4899", // pink-500
-            "#84cc16", // lime-500
-            "#6366f1"  // indigo-500
-        ];
-        
-        // Group features by unit type for multi-axis support
-        const unitGroups = {};
-        category.features.forEach(feature => {
-            const unit = feature.unit || 'default';
-            if (!unitGroups[unit]) {
-                unitGroups[unit] = [];
-            }
-            unitGroups[unit].push(feature);
-        });
-        
-        // Create Y-axis for each unit type
-        const unitAxes = {};
-        const unitOrder = Object.keys(unitGroups);
-        
-        unitOrder.forEach((unit, index) => {
-            const axisId = `axis-${unit.replace(/[^a-zA-Z0-9]/g, '-')}`;
-            const axisAlignment = index === 0 
-                ? SciChart.EAxisAlignment.Left 
-                : SciChart.EAxisAlignment.Right;
-            
-            const axisTitle = unit ? `(${unit})` : '';
-            
-            sciChartSurface.yAxes.add(new SciChart.NumericAxis(wasmContext, {
-                id: axisId,
-                axisTitle: axisTitle,
-                axisAlignment: axisAlignment,
-                drawMajorGridLines: index === 0, // Only first axis draws grid
-                majorGridLineStyle: { stroke: gridStroke },
-                tickLabelStyle: { color: axisTextColor }
-            }));
-            
-            unitAxes[unit] = axisId;
-        });
-        
-        // Add data series for each feature
-        let colorIndex = 0;
-        category.features.forEach(feature => {
-            const dataSeries = new SciChart.XyDataSeries(wasmContext, {
-                xValues: dates,
-                yValues: feature.values,
-                dataSeriesName: `${feature.name} ${feature.unit ? `(${feature.unit})` : ''}`
-            });
-            
-            const color = colors[colorIndex % colors.length];
-            const unit = feature.unit || 'default';
-            const yAxisId = unitAxes[unit];
-            
-            sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
-                dataSeries: dataSeries,
-                yAxisId: yAxisId,
-                stroke: color,
-                strokeThickness: 2,
-                pointMarker: new SciChart.EllipsePointMarker(wasmContext, {
-                    width: 5,
-                    height: 5,
-                    fill: color,
-                    stroke: "white",
-                    strokeThickness: 1
-                })
-            }));
-            
-            colorIndex++;
-        });
-        
-        // Add interactivity
-        sciChartSurface.chartModifiers.add(new SciChart.LegendModifier({
-            showCheckboxes: false,
-            orientation: SciChart.ELegendOrientation.Horizontal,
-            placement: SciChart.ELegendPlacement.TopLeft
-        }));
-        sciChartSurface.chartModifiers.add(new SciChart.ZoomPanModifier());
-        sciChartSurface.chartModifiers.add(new SciChart.MouseWheelZoomModifier());
-        sciChartSurface.chartModifiers.add(new SciChart.RolloverModifier({ showTooltip: true }));
-        
-        sciChartSurface.zoomExtents();
-        
-    } catch (error) {
-        console.error('Error plotting feature chart:', error);
-        chartDiv.innerHTML = '<div class="text-center text-red-500 py-4">Error loading chart</div>';
-    }
+// Helper function to show specific tab content
+function showTabContent(index) {
+    const panels = document.querySelectorAll('.feature-tab-panel');
+    panels.forEach((panel, i) => {
+        if (i === index) {
+            panel.classList.remove('hidden');
+        } else {
+            panel.classList.add('hidden');
+        }
+    });
 }
 
 // Load and plot climate data
@@ -592,9 +623,28 @@ async function plotClimateChart(data) {
     // --- Data Series ---
     const climateDates = data.dates.map(d => new Date(d).getTime());
     
-    const tempSeries = new SciChart.XyDataSeries(wasmContext, { xValues: climateDates, yValues: data.temperature, dataSeriesName: "Temperature (°C)" });
-    const humiditySeries = new SciChart.XyDataSeries(wasmContext, { xValues: climateDates, yValues: data.humidity, dataSeriesName: "Humidity (%)" });
-    const rainfallSeries = new SciChart.XyDataSeries(wasmContext, { xValues: climateDates, yValues: data.rainfall, dataSeriesName: "Rainfall (mm)" });
+    // Check if required data exists
+    if (!data.temperature || !data.humidity || !data.rainfall) {
+        console.error('Missing climate data:', data);
+        chartDiv.innerHTML = '<div class="text-center text-red-500 py-4">Climate data not available</div>';
+        return;
+    }
+    
+    const tempSeries = new SciChart.XyDataSeries(wasmContext, { 
+        xValues: climateDates, 
+        yValues: data.temperature, 
+        dataSeriesName: "Temperature (°C)" 
+    });
+    const humiditySeries = new SciChart.XyDataSeries(wasmContext, { 
+        xValues: climateDates, 
+        yValues: data.humidity, 
+        dataSeriesName: "Humidity (%)" 
+    });
+    const rainfallSeries = new SciChart.XyDataSeries(wasmContext, { 
+        xValues: climateDates, 
+        yValues: data.rainfall, 
+        dataSeriesName: "Rainfall (mm)" 
+    });
 
     // --- Renderable Series (linking data to axes) ---
     sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
