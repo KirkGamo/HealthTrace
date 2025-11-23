@@ -41,8 +41,8 @@ async function loadCurrentStatus() {
 // Create status card for a disease
 function createStatusCard(disease) {
     const card = document.createElement('div');
-    // Added transition classes for smooth hover effect
-    card.className = 'bg-white p-5 rounded-lg shadow-sm transition-all duration-300 ease-in-out hover:shadow-lg hover:-translate-y-1';
+    // Added enhanced transition classes and hover effects
+    card.className = 'bg-white p-6 rounded-xl shadow-md border border-slate-100 transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-2 status-card fade-in-up';
     
     const isIncreasing = disease.trend === 'increasing';
     const trendColor = isIncreasing ? 'red' : 'green';
@@ -52,12 +52,12 @@ function createStatusCard(disease) {
         : `<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 18.5a.75.75 0 01-.75-.75V8.75L5.28 10.72a.75.75 0 01-1.06-1.06l3.25-3.25a.75.75 0 011.06 0l3.25 3.25a.75.75 0 11-1.06 1.06L9.75 8.75v9A.75.75 0 018 18.5z" clip-rule="evenodd" /></svg>`;
 
     card.innerHTML = `
-        <h3 class="text-md font-semibold text-slate-600">${disease.disease}</h3>
-        <p class="text-3xl font-bold text-slate-900 my-1">${disease.current_cases}</p>
-        <p class="text-xs text-slate-400 mb-3">cases reported on ${disease.date}</p>
-        <div class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-sm font-medium bg-${trendColor}-100 text-${trendColor}-800">
+        <h3 class="text-sm font-semibold text-slate-600 uppercase tracking-wide mb-2">${disease.disease}</h3>
+        <p class="text-4xl font-bold text-slate-900 my-2">${disease.current_cases}</p>
+        <p class="text-xs text-slate-500 mb-3">cases on ${disease.date}</p>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-${trendColor}-100 text-${trendColor}-800 shadow-sm">
             ${trendIcon}
-            <span>${disease.trend}</span>
+            <span class="capitalize">${disease.trend}</span>
         </div>
     `;
     
@@ -149,15 +149,24 @@ function setupDiseaseButtons() {
 async function loadDiseaseForecasts(disease) {
     currentDisease = disease;
     document.getElementById('selectedDisease').textContent = disease;
+    
+    // Smooth scroll to forecast section
+    const forecastSection = document.querySelector('.bg-white.p-8.rounded-xl');
+    if (forecastSection) {
+        forecastSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 
     // Show loading indicator for forecast chart
     const forecastChartDiv = document.getElementById('forecastChart');
     forecastChartDiv.innerHTML = `<div class="text-center text-slate-500 chart-loader">
-        <svg class="animate-spin h-8 w-8 text-sky-600 mx-auto mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <svg class="animate-spin h-10 w-10 text-sky-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
         </svg>
-        <p>Loading forecast...</p>
+        <p class="font-medium">Loading ${disease} forecast...</p>
+        <div class="mt-3 w-48 mx-auto bg-slate-200 rounded-full h-1.5">
+            <div class="bg-sky-600 h-1.5 rounded-full animate-pulse" style="width: 70%"></div>
+        </div>
     </div>`;
     
     try {
@@ -166,7 +175,7 @@ async function loadDiseaseForecasts(disease) {
         const forecastData = await forecastResponse.json();
         
         if (forecastData.error) {
-            alert(`Error: ${forecastData.error}`);
+            showToast(`Error: ${forecastData.error}`, 'error');
             return;
         }
 
@@ -188,9 +197,12 @@ async function loadDiseaseForecasts(disease) {
         // Load and display feature factors
         await loadFeatureFactors(disease);
         
+        // Show success toast
+        showToast(`Forecast loaded for ${disease}`, 'success');
+        
     } catch (error) {
         console.error('Error loading forecast:', error);
-        alert('Error loading forecast data. Please try again.');
+        showToast('Error loading forecast data. Please try again.', 'error');
     }
 }
 
@@ -420,10 +432,10 @@ async function displayFeatureFactors(data) {
     
     data.categories.forEach((category, index) => {
         const tabButton = document.createElement('button');
-        tabButton.className = `px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+        tabButton.className = `tab-btn px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
             index === 0 
-                ? 'bg-white text-sky-600 border-b-2 border-sky-600' 
-                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                ? 'active bg-sky-600 text-white shadow-md' 
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200'
         }`;
         tabButton.setAttribute('role', 'tab');
         tabButton.setAttribute('data-tab-index', index);
@@ -432,11 +444,11 @@ async function displayFeatureFactors(data) {
         tabButton.addEventListener('click', () => {
             // Update active tab styling
             nav.querySelectorAll('button').forEach(btn => {
-                btn.className = 'px-4 py-2 text-sm font-medium rounded-t-lg transition-colors text-slate-600 hover:text-slate-900 hover:bg-slate-50';
+                btn.className = 'tab-btn px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200';
             });
-            tabButton.className = 'px-4 py-2 text-sm font-medium rounded-t-lg transition-colors bg-white text-sky-600 border-b-2 border-sky-600';
+            tabButton.className = 'tab-btn px-5 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 active bg-sky-600 text-white shadow-md';
             
-            // Show corresponding content
+            // Show corresponding content with animation
             showTabContent(index);
         });
         
@@ -450,29 +462,29 @@ async function displayFeatureFactors(data) {
     // Create tab content panels
     data.categories.forEach((category, index) => {
         const tabPanel = document.createElement('div');
-        tabPanel.className = `feature-tab-panel ${index === 0 ? '' : 'hidden'}`;
+        tabPanel.className = `feature-tab-panel fade-in ${index === 0 ? '' : 'hidden'}`;
         tabPanel.setAttribute('data-panel-index', index);
         
         const categoryCard = document.createElement('div');
-        categoryCard.className = 'bg-white border border-slate-200 rounded-lg p-6 shadow-sm';
+        categoryCard.className = 'bg-gradient-to-br from-white to-slate-50 border-2 border-slate-200 rounded-xl p-8 shadow-lg';
         
-        // Category header
+        // Category header with emoji icon
         const header = document.createElement('h4');
-        header.className = 'text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200';
-        header.textContent = `${category.name} - Impact Analysis`;
+        header.className = 'text-xl font-bold text-slate-900 mb-6 pb-3 border-b-2 border-sky-200 flex items-center gap-2';
+        header.innerHTML = `<span>📊</span><span>${category.name} - Impact Analysis</span>`;
         categoryCard.appendChild(header);
         
         // Create bars container
         const barsContainer = document.createElement('div');
-        barsContainer.className = 'space-y-3';
+        barsContainer.className = 'space-y-4';
         
         // Helper function to get color based on impact
         const getColor = (impact) => {
-            if (impact >= 50) return { bg: 'bg-red-500', text: 'text-red-700', label: 'High' };
-            if (impact >= 30) return { bg: 'bg-orange-500', text: 'text-orange-700', label: 'Medium-High' };
-            if (impact >= 20) return { bg: 'bg-yellow-500', text: 'text-yellow-700', label: 'Medium' };
-            if (impact >= 10) return { bg: 'bg-blue-500', text: 'text-blue-700', label: 'Low-Medium' };
-            return { bg: 'bg-slate-400', text: 'text-slate-700', label: 'Low' };
+            if (impact >= 50) return { bg: 'bg-gradient-to-r from-red-500 to-red-600', text: 'text-red-700', label: 'High', border: 'border-red-300' };
+            if (impact >= 30) return { bg: 'bg-gradient-to-r from-orange-500 to-orange-600', text: 'text-orange-700', label: 'Medium-High', border: 'border-orange-300' };
+            if (impact >= 20) return { bg: 'bg-gradient-to-r from-yellow-500 to-yellow-600', text: 'text-yellow-700', label: 'Medium', border: 'border-yellow-300' };
+            if (impact >= 10) return { bg: 'bg-gradient-to-r from-blue-500 to-blue-600', text: 'text-blue-700', label: 'Low-Medium', border: 'border-blue-300' };
+            return { bg: 'bg-gradient-to-r from-slate-400 to-slate-500', text: 'text-slate-700', label: 'Low', border: 'border-slate-300' };
         };
         
         // Create bar for each feature
@@ -480,29 +492,29 @@ async function displayFeatureFactors(data) {
             const colorScheme = getColor(feature.impact_percentage);
             
             const barWrapper = document.createElement('div');
-            barWrapper.className = 'space-y-1';
+            barWrapper.className = 'space-y-2 p-3 rounded-lg bg-white border border-slate-100 hover:shadow-md transition-all duration-200';
             
             // Feature name and percentage
             const labelRow = document.createElement('div');
-            labelRow.className = 'flex justify-between items-center text-sm';
+            labelRow.className = 'flex justify-between items-center';
             labelRow.innerHTML = `
-                <span class="font-medium text-slate-700">${feature.name}</span>
-                <span class="${colorScheme.text} font-semibold">${feature.impact_percentage.toFixed(1)}%</span>
+                <span class="font-semibold text-slate-800 text-sm">${feature.name}</span>
+                <span class="${colorScheme.text} font-bold text-base">${feature.impact_percentage.toFixed(1)}%</span>
             `;
             barWrapper.appendChild(labelRow);
             
-            // Progress bar
+            // Progress bar with enhanced styling
             const barContainer = document.createElement('div');
-            barContainer.className = 'w-full bg-slate-100 rounded-full h-6 relative overflow-hidden';
+            barContainer.className = `w-full bg-slate-100 rounded-full h-8 relative overflow-hidden shadow-inner border ${colorScheme.border}`;
             
             const bar = document.createElement('div');
-            bar.className = `${colorScheme.bg} h-6 rounded-full transition-all duration-500 flex items-center justify-end pr-2`;
-            bar.style.width = `${Math.max(feature.impact_percentage, 2)}%`; // Minimum 2% for visibility
+            bar.className = `${colorScheme.bg} h-8 rounded-full feature-progress-bar flex items-center justify-end pr-3 shadow-sm`;
+            bar.style.width = `${Math.max(feature.impact_percentage, 3)}%`; // Minimum 3% for visibility
             
             // Add impact label inside bar if wide enough
             if (feature.impact_percentage > 15) {
                 const innerLabel = document.createElement('span');
-                innerLabel.className = 'text-white text-xs font-medium';
+                innerLabel.className = 'text-white text-xs font-bold uppercase tracking-wide';
                 innerLabel.textContent = colorScheme.label;
                 bar.appendChild(innerLabel);
             }
@@ -512,8 +524,8 @@ async function displayFeatureFactors(data) {
             
             // Correlation value (technical detail)
             const corrDetail = document.createElement('div');
-            corrDetail.className = 'text-xs text-slate-500 pl-1';
-            corrDetail.textContent = `Correlation: ${feature.impact.toFixed(3)}`;
+            corrDetail.className = 'text-xs text-slate-500 pl-1 flex items-center gap-1';
+            corrDetail.innerHTML = `<span class="font-mono">r = ${feature.impact.toFixed(3)}</span>`;
             barWrapper.appendChild(corrDetail);
             
             barsContainer.appendChild(barWrapper);
@@ -521,29 +533,29 @@ async function displayFeatureFactors(data) {
         
         categoryCard.appendChild(barsContainer);
         
-        // Add legend
+        // Add legend with enhanced styling
         const legendDiv = document.createElement('div');
-        legendDiv.className = 'flex flex-wrap items-center justify-center gap-3 mt-6 pt-4 border-t border-slate-200 text-xs text-slate-600';
+        legendDiv.className = 'flex flex-wrap items-center justify-center gap-4 mt-8 pt-6 border-t-2 border-slate-200 text-sm text-slate-600';
         legendDiv.innerHTML = `
-            <div class="flex items-center gap-1">
-                <div class="w-4 h-4 rounded bg-red-500"></div>
-                <span>High (≥50%)</span>
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded shadow-sm bg-gradient-to-r from-red-500 to-red-600"></div>
+                <span class="font-medium">High (≥50%)</span>
             </div>
-            <div class="flex items-center gap-1">
-                <div class="w-4 h-4 rounded bg-orange-500"></div>
-                <span>Medium-High (30-50%)</span>
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded shadow-sm bg-gradient-to-r from-orange-500 to-orange-600"></div>
+                <span class="font-medium">Med-High (30-50%)</span>
             </div>
-            <div class="flex items-center gap-1">
-                <div class="w-4 h-4 rounded bg-yellow-500"></div>
-                <span>Medium (20-30%)</span>
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded shadow-sm bg-gradient-to-r from-yellow-500 to-yellow-600"></div>
+                <span class="font-medium">Medium (20-30%)</span>
             </div>
-            <div class="flex items-center gap-1">
-                <div class="w-4 h-4 rounded bg-blue-500"></div>
-                <span>Low-Medium (10-20%)</span>
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded shadow-sm bg-gradient-to-r from-blue-500 to-blue-600"></div>
+                <span class="font-medium">Low-Med (10-20%)</span>
             </div>
-            <div class="flex items-center gap-1">
-                <div class="w-4 h-4 rounded bg-slate-400"></div>
-                <span>Low (<10%)</span>
+            <div class="flex items-center gap-2">
+                <div class="w-5 h-5 rounded shadow-sm bg-gradient-to-r from-slate-400 to-slate-500"></div>
+                <span class="font-medium">Low (<10%)</span>
             </div>
         `;
         categoryCard.appendChild(legendDiv);
@@ -553,12 +565,13 @@ async function displayFeatureFactors(data) {
     });
 }
 
-// Helper function to show specific tab content
+// Helper function to show specific tab content with animation
 function showTabContent(index) {
     const panels = document.querySelectorAll('.feature-tab-panel');
     panels.forEach((panel, i) => {
         if (i === index) {
             panel.classList.remove('hidden');
+            panel.classList.add('fade-in-up');
         } else {
             panel.classList.add('hidden');
         }
@@ -674,4 +687,65 @@ async function plotClimateChart(data) {
     sciChartSurface.chartModifiers.add(new SciChart.MouseWheelZoomModifier());
 
     sciChartSurface.zoomExtents();
+}
+
+// Toast notification system for better user feedback
+function showToast(message, type = 'info') {
+    // Remove existing toasts
+    const existingToast = document.getElementById('toast-notification');
+    if (existingToast) {
+        existingToast.remove();
+    }
+    
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.id = 'toast-notification';
+    toast.className = 'fixed bottom-6 right-6 z-50 animate-bounce';
+    
+    // Set colors based on type
+    let bgColor, textColor, icon;
+    switch(type) {
+        case 'success':
+            bgColor = 'bg-green-600';
+            textColor = 'text-white';
+            icon = '✓';
+            break;
+        case 'error':
+            bgColor = 'bg-red-600';
+            textColor = 'text-white';
+            icon = '✕';
+            break;
+        case 'warning':
+            bgColor = 'bg-yellow-600';
+            textColor = 'text-white';
+            icon = '⚠';
+            break;
+        default:
+            bgColor = 'bg-sky-600';
+            textColor = 'text-white';
+            icon = 'ℹ';
+    }
+    
+    toast.innerHTML = `
+        <div class="${bgColor} ${textColor} px-6 py-4 rounded-lg shadow-2xl flex items-center gap-3 max-w-md">
+            <span class="text-2xl">${icon}</span>
+            <p class="font-medium">${message}</p>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    // Animate in
+    setTimeout(() => {
+        toast.classList.remove('animate-bounce');
+        toast.classList.add('fade-in-up');
+    }, 100);
+    
+    // Auto remove after 3 seconds
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(20px)';
+        toast.style.transition = 'all 0.3s ease';
+        setTimeout(() => toast.remove(), 300);
+    }, 3000);
 }
