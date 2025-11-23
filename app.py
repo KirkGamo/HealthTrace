@@ -326,6 +326,113 @@ def get_climate_data(disease):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/feature_factors/<disease>')
+def get_feature_factors(disease):
+    """Get current feature values organized by category"""
+    
+    if disease not in Config.DISEASES:
+        return jsonify({'error': 'Disease not found'}), 404
+    
+    try:
+        data_file = os.path.join(Config.DATA_PATH, f'{disease.lower()}_historical_data.csv')
+        
+        if not os.path.exists(data_file):
+            return jsonify({'error': 'Data not found'}), 404
+        
+        df = pd.read_csv(data_file, parse_dates=['date'])
+        
+        # Get most recent data point
+        latest = df.iloc[-1]
+        
+        # Organize features by category
+        feature_categories = {
+            'Climate & Precipitation': {
+                'features': ['precipitation', 'spi3', 'spi6', 'precip_anomaly', 
+                            'precipitation_7day', 'precipitation_30day'],
+                'values': []
+            },
+            'Socioeconomic': {
+                'features': ['pop_count_total', 'pop_density_mean', 'avg_rad_mean'],
+                'values': []
+            },
+            'Temperature': {
+                'features': ['tmin', 'tmax', 'tave', 'temp_range', 'tave_7day', 'tave_30day'],
+                'values': []
+            },
+            'Air Quality': {
+                'features': ['no2', 'co', 'so2', 'o3', 'pm10', 'pm25'],
+                'values': []
+            },
+            'Vegetation': {
+                'features': ['ndvi'],
+                'values': []
+            },
+            'Sanitation & Water Access': {
+                'features': ['drinking_water_count', 'drinking_water_nearest',
+                            'water_well_count', 'water_well_nearest',
+                            'toilet_count', 'toilet_nearest',
+                            'waste_basket_count', 'waste_basket_nearest',
+                            'wastewater_plant_count', 'wastewater_plant_nearest'],
+                'values': []
+            },
+            'Water Bodies': {
+                'features': ['osm_wetland_nearest', 'osm_reservoir_nearest',
+                            'osm_water_nearest', 'osm_riverbank_nearest',
+                            'osm_river_nearest', 'osm_stream_nearest',
+                            'osm_canal_nearest', 'osm_drain_nearest'],
+                'values': []
+            },
+            'Healthcare Access': {
+                'features': ['clinic_count', 'clinic_nearest',
+                            'hospital_count', 'hospital_nearest',
+                            'pharmacy_count', 'pharmacy_nearest',
+                            'doctors_count', 'doctors_nearest'],
+                'values': []
+            },
+            'Wealth Index': {
+                'features': ['rwi_mean', 'rwi_median', 'rwi_std'],
+                'values': []
+            }
+        }
+        
+        # Populate values for each category
+        response = {
+            'disease': disease,
+            'date': latest['date'],
+            'categories': []
+        }
+        
+        for category_name, category_data in feature_categories.items():
+            category_result = {
+                'name': category_name,
+                'factors': []
+            }
+            
+            for feature in category_data['features']:
+                if feature in latest.index:
+                    value = latest[feature]
+                    # Handle NaN values
+                    if pd.isna(value):
+                        value = 0
+                    
+                    # Format feature name for display
+                    display_name = feature.replace('_', ' ').title()
+                    
+                    category_result['factors'].append({
+                        'name': display_name,
+                        'value': float(value),
+                        'raw_name': feature
+                    })
+            
+            # Only add category if it has data
+            if category_result['factors']:
+                response['categories'].append(category_result)
+        
+        return jsonify(response)
+        
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     # Initialize models on startup
     initialize_models()
