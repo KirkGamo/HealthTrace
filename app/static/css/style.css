@@ -1,10 +1,141 @@
-/* All previous CSS can be removed. */
-/* We will use Tailwind CSS utility classes directly in the HTML. */
-/* You can add overrides or styles for third-party libraries here if necessary. */
+/* Enhanced styles for HealthTrace Dashboard */
 
-/* Example: Custom style for the active disease button */
+/* Active disease button with improved styling */
 #diseaseButtonsContainer .disease-btn.active {
-    background-color: #0ea5e9; /* sky-500 */
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
     color: white;
     border-color: #0ea5e9;
+    box-shadow: 0 4px 12px rgba(14, 165, 233, 0.4);
+    transform: scale(1.05);
+}
+
+/* Status card animations and hover effects */
+.status-card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.status-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Alert badge animations */
+@keyframes badge-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.8;
+        transform: scale(1.05);
+    }
+}
+
+.alert-badge {
+    animation: badge-pulse 2s ease-in-out infinite;
+}
+
+/* Tab active state enhancement */
+.tab-btn.active {
+    position: relative;
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    color: white;
+    box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
+}
+
+.tab-btn.active::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: #0ea5e9;
+}
+
+/* Feature impact progress bars enhanced */
+.feature-progress-bar {
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.feature-progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Table row hover effect */
+#forecastDataTableBody tr {
+    transition: background-color 0.2s ease;
+}
+
+#forecastDataTableBody tr:hover {
+    background-color: #f8fafc;
+}
+
+/* Loading spinner enhancement */
+@keyframes spin-smooth {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.chart-loader svg {
+    animation: spin-smooth 1s linear infinite;
+}
+
+/* Smooth transitions for visibility changes */
+.fade-in {
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Mobile menu animation */
+#mobile-menu {
+    animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
