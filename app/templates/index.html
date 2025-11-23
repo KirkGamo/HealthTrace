@@ -310,38 +310,6 @@
                 </div>
               </div>
             </div>
-            <div class="p-4 border rounded-lg bg-white">
-              <h3 class="font-semibold mb-2">Climate Factors (Last 30 Days)</h3>
-              <div
-                id="climateChart"
-                class="min-h-[300px] flex items-center justify-center"
-              >
-                <!-- Chart Loading Indicator -->
-                <div class="text-center text-slate-500 chart-loader">
-                  <svg
-                    class="animate-spin h-8 w-8 text-sky-600 mx-auto mb-2"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  <p>Loading climate data...</p>
-                </div>
-              </div>
-            </div>
           </div>
           <!-- Statistics taking up 2/5 of the width -->
           <div class="lg:col-span-2 space-y-6">
@@ -369,11 +337,23 @@
         <!-- Feature Factors Section -->
         <div class="mt-8">
           <h3 class="text-xl font-bold text-slate-900 mb-4">
-            Factors Affecting Prediction
+            Feature Impact on Prediction
           </h3>
+          <p class="text-sm text-slate-600 mb-4">
+            This shows how strongly each factor correlates with disease predictions. Higher percentages indicate stronger influence on the model's forecasts.
+          </p>
+          
+          <!-- Tabs Navigation -->
+          <div id="featureTabsNav" class="hidden border-b border-slate-200 mb-6">
+            <nav class="flex flex-wrap gap-2" role="tablist">
+              <!-- Tabs will be dynamically generated here -->
+            </nav>
+          </div>
+          
+          <!-- Tabs Content -->
           <div id="featureFactorsContainer" class="space-y-4">
             <div class="text-center text-slate-500 py-8">
-              <p>Select a disease to view contributing factors</p>
+              <p>Select a disease to view feature impact analysis</p>
             </div>
           </div>
         </div>
