@@ -232,7 +232,7 @@ def get_climate_data(disease):
 
 @app.route('/api/feature_factors/<disease>')
 def get_feature_factors(disease):
-    """Get current feature values organized by category"""
+    """Get time-series feature values organized by category for charting"""
     
     if disease not in Config.DISEASES:
         return jsonify({'error': 'Disease not found'}), 404
@@ -245,31 +245,42 @@ def get_feature_factors(disease):
         
         df = pd.read_csv(data_file, parse_dates=['date'])
         
-        # Get most recent data point
-        latest = df.iloc[-1]
+        # Get last 30 days for time-series display
+        df_recent = df.tail(30)
         
-        # Organize features by category
+        # Organize features by category with time-series data
         feature_categories = {
             'Climate & Precipitation': {
                 'features': ['precipitation', 'spi3', 'spi6', 'precip_anomaly', 
                             'precipitation_7day', 'precipitation_30day'],
-                'values': []
+                'unit_map': {
+                    'precipitation': 'mm', 'precipitation_7day': 'mm', 'precipitation_30day': 'mm',
+                    'spi3': '', 'spi6': '', 'precip_anomaly': 'mm'
+                }
             },
             'Socioeconomic': {
                 'features': ['pop_count_total', 'pop_density_mean', 'avg_rad_mean'],
-                'values': []
+                'unit_map': {
+                    'pop_count_total': '', 'pop_density_mean': '/km²', 'avg_rad_mean': ''
+                }
             },
             'Temperature': {
                 'features': ['tmin', 'tmax', 'tave', 'temp_range', 'tave_7day', 'tave_30day'],
-                'values': []
+                'unit_map': {
+                    'tmin': '°C', 'tmax': '°C', 'tave': '°C', 
+                    'temp_range': '°C', 'tave_7day': '°C', 'tave_30day': '°C'
+                }
             },
             'Air Quality': {
                 'features': ['no2', 'co', 'so2', 'o3', 'pm10', 'pm25'],
-                'values': []
+                'unit_map': {
+                    'no2': 'μg/m³', 'co': 'μg/m³', 'so2': 'μg/m³', 
+                    'o3': 'μg/m³', 'pm10': 'μg/m³', 'pm25': 'μg/m³'
+                }
             },
             'Vegetation': {
                 'features': ['ndvi'],
-                'values': []
+                'unit_map': {'ndvi': ''}
             },
             'Sanitation & Water Access': {
                 'features': ['drinking_water_count', 'drinking_water_nearest',
@@ -277,59 +288,76 @@ def get_feature_factors(disease):
                             'toilet_count', 'toilet_nearest',
                             'waste_basket_count', 'waste_basket_nearest',
                             'wastewater_plant_count', 'wastewater_plant_nearest'],
-                'values': []
+                'unit_map': {
+                    'drinking_water_count': '', 'drinking_water_nearest': 'm',
+                    'water_well_count': '', 'water_well_nearest': 'm',
+                    'toilet_count': '', 'toilet_nearest': 'm',
+                    'waste_basket_count': '', 'waste_basket_nearest': 'm',
+                    'wastewater_plant_count': '', 'wastewater_plant_nearest': 'm'
+                }
             },
             'Water Bodies': {
                 'features': ['osm_wetland_nearest', 'osm_reservoir_nearest',
                             'osm_water_nearest', 'osm_riverbank_nearest',
                             'osm_river_nearest', 'osm_stream_nearest',
                             'osm_canal_nearest', 'osm_drain_nearest'],
-                'values': []
+                'unit_map': {
+                    'osm_wetland_nearest': 'm', 'osm_reservoir_nearest': 'm',
+                    'osm_water_nearest': 'm', 'osm_riverbank_nearest': 'm',
+                    'osm_river_nearest': 'm', 'osm_stream_nearest': 'm',
+                    'osm_canal_nearest': 'm', 'osm_drain_nearest': 'm'
+                }
             },
             'Healthcare Access': {
                 'features': ['clinic_count', 'clinic_nearest',
                             'hospital_count', 'hospital_nearest',
                             'pharmacy_count', 'pharmacy_nearest',
                             'doctors_count', 'doctors_nearest'],
-                'values': []
+                'unit_map': {
+                    'clinic_count': '', 'clinic_nearest': 'm',
+                    'hospital_count': '', 'hospital_nearest': 'm',
+                    'pharmacy_count': '', 'pharmacy_nearest': 'm',
+                    'doctors_count': '', 'doctors_nearest': 'm'
+                }
             },
             'Wealth Index': {
                 'features': ['rwi_mean', 'rwi_median', 'rwi_std'],
-                'values': []
+                'unit_map': {'rwi_mean': '', 'rwi_median': '', 'rwi_std': ''}
             }
         }
         
-        # Populate values for each category
+        # Populate time-series data for each category
         response = {
             'disease': disease,
-            'date': latest['date'],
+            'dates': df_recent['date'].dt.strftime('%Y-%m-%d').tolist(),
             'categories': []
         }
         
         for category_name, category_data in feature_categories.items():
             category_result = {
                 'name': category_name,
-                'factors': []
+                'features': []
             }
             
             for feature in category_data['features']:
-                if feature in latest.index:
-                    value = latest[feature]
-                    # Handle NaN values
-                    if pd.isna(value):
-                        value = 0
+                if feature in df_recent.columns:
+                    values = df_recent[feature].fillna(0).tolist()
                     
                     # Format feature name for display
                     display_name = feature.replace('_', ' ').title()
                     
-                    category_result['factors'].append({
+                    # Get unit from unit_map
+                    unit = category_data['unit_map'].get(feature, '')
+                    
+                    category_result['features'].append({
                         'name': display_name,
-                        'value': float(value),
-                        'raw_name': feature
+                        'raw_name': feature,
+                        'values': values,
+                        'unit': unit
                     })
             
             # Only add category if it has data
-            if category_result['factors']:
+            if category_result['features']:
                 response['categories'].append(category_result)
         
         return jsonify(response)

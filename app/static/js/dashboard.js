@@ -379,15 +379,15 @@ async function loadFeatureFactors(disease) {
             return;
         }
         
-        displayFeatureFactors(data);
+        await displayFeatureFactors(data);
         
     } catch (error) {
         console.error('Error loading feature factors:', error);
     }
 }
 
-// Display feature factors organized by category
-function displayFeatureFactors(data) {
+// Display feature factors organized by category with charts
+async function displayFeatureFactors(data) {
     const container = document.getElementById('featureFactorsContainer');
     container.innerHTML = '';
     
@@ -396,58 +396,142 @@ function displayFeatureFactors(data) {
         return;
     }
     
-    // Create cards for each category
-    data.categories.forEach(category => {
+    // Parse dates for charts
+    const dates = data.dates.map(d => new Date(d).getTime());
+    
+    // Create charts for each category
+    for (const category of data.categories) {
         const categoryCard = document.createElement('div');
         categoryCard.className = 'bg-white border border-slate-200 rounded-lg p-6 shadow-sm';
         
         // Category header
         const header = document.createElement('h4');
         header.className = 'text-lg font-semibold text-slate-800 mb-4 pb-2 border-b border-slate-200';
-        header.textContent = category.name;
+        header.textContent = `${category.name} (Last 30 Days)`;
         categoryCard.appendChild(header);
         
-        // Create grid for factors
-        const factorsGrid = document.createElement('div');
-        factorsGrid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
+        // Create chart container
+        const chartDiv = document.createElement('div');
+        chartDiv.className = 'feature-chart';
+        chartDiv.style.height = '300px';
+        chartDiv.id = `chart-${category.name.replace(/\s+/g, '-').toLowerCase()}`;
+        categoryCard.appendChild(chartDiv);
         
-        category.factors.forEach(factor => {
-            const factorItem = document.createElement('div');
-            factorItem.className = 'bg-slate-50 rounded-lg p-4 hover:bg-slate-100 transition-colors';
-            
-            // Format the value based on type
-            let displayValue = factor.value.toFixed(2);
-            
-            // Add units based on factor type
-            let unit = '';
-            if (factor.raw_name.includes('temp') || factor.raw_name.includes('tmin') || factor.raw_name.includes('tmax') || factor.raw_name.includes('tave')) {
-                unit = '°C';
-            } else if (factor.raw_name.includes('precipitation') || factor.raw_name.includes('rainfall')) {
-                unit = ' mm';
-            } else if (factor.raw_name.includes('humidity')) {
-                unit = '%';
-            } else if (factor.raw_name.includes('nearest')) {
-                unit = ' m';
-                displayValue = factor.value.toFixed(0);
-            } else if (factor.raw_name.includes('count')) {
-                displayValue = factor.value.toFixed(0);
-            } else if (factor.raw_name.includes('density')) {
-                unit = ' /km²';
-            } else if (factor.raw_name.includes('pm')) {
-                unit = ' μg/m³';
+        container.appendChild(categoryCard);
+        
+        // Plot the chart for this category
+        await plotFeatureChart(chartDiv, category, dates);
+    }
+}
+
+// Plot feature chart for a category
+async function plotFeatureChart(chartDiv, category, dates) {
+    try {
+        const { sciChartSurface, wasmContext } = await SciChart.SciChartSurface.create(chartDiv);
+        const gridStroke = "#e2e8f0";
+        const axisTextColor = "#64748b";
+        
+        // Create axes
+        sciChartSurface.xAxes.add(new SciChart.DateTimeNumericAxis(wasmContext, {
+            drawMajorGridLines: true,
+            majorGridLineStyle: { stroke: gridStroke },
+            tickLabelStyle: { color: axisTextColor }
+        }));
+        
+        // Color palette for multiple features
+        const colors = [
+            "#0ea5e9", // sky-500
+            "#f43f5e", // rose-500
+            "#16a34a", // green-600
+            "#a855f7", // purple-500
+            "#f97316", // orange-500
+            "#06b6d4", // cyan-500
+            "#eab308", // yellow-500
+            "#ec4899", // pink-500
+            "#84cc16", // lime-500
+            "#6366f1"  // indigo-500
+        ];
+        
+        // Group features by unit type for multi-axis support
+        const unitGroups = {};
+        category.features.forEach(feature => {
+            const unit = feature.unit || 'default';
+            if (!unitGroups[unit]) {
+                unitGroups[unit] = [];
             }
-            
-            factorItem.innerHTML = `
-                <div class="text-sm text-slate-600 mb-1">${factor.name}</div>
-                <div class="text-2xl font-bold text-slate-900">${displayValue}${unit}</div>
-            `;
-            
-            factorsGrid.appendChild(factorItem);
+            unitGroups[unit].push(feature);
         });
         
-        categoryCard.appendChild(factorsGrid);
-        container.appendChild(categoryCard);
-    });
+        // Create Y-axis for each unit type
+        const unitAxes = {};
+        const unitOrder = Object.keys(unitGroups);
+        
+        unitOrder.forEach((unit, index) => {
+            const axisId = `axis-${unit.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            const axisAlignment = index === 0 
+                ? SciChart.EAxisAlignment.Left 
+                : SciChart.EAxisAlignment.Right;
+            
+            const axisTitle = unit ? `(${unit})` : '';
+            
+            sciChartSurface.yAxes.add(new SciChart.NumericAxis(wasmContext, {
+                id: axisId,
+                axisTitle: axisTitle,
+                axisAlignment: axisAlignment,
+                drawMajorGridLines: index === 0, // Only first axis draws grid
+                majorGridLineStyle: { stroke: gridStroke },
+                tickLabelStyle: { color: axisTextColor }
+            }));
+            
+            unitAxes[unit] = axisId;
+        });
+        
+        // Add data series for each feature
+        let colorIndex = 0;
+        category.features.forEach(feature => {
+            const dataSeries = new SciChart.XyDataSeries(wasmContext, {
+                xValues: dates,
+                yValues: feature.values,
+                dataSeriesName: `${feature.name} ${feature.unit ? `(${feature.unit})` : ''}`
+            });
+            
+            const color = colors[colorIndex % colors.length];
+            const unit = feature.unit || 'default';
+            const yAxisId = unitAxes[unit];
+            
+            sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
+                dataSeries: dataSeries,
+                yAxisId: yAxisId,
+                stroke: color,
+                strokeThickness: 2,
+                pointMarker: new SciChart.EllipsePointMarker(wasmContext, {
+                    width: 5,
+                    height: 5,
+                    fill: color,
+                    stroke: "white",
+                    strokeThickness: 1
+                })
+            }));
+            
+            colorIndex++;
+        });
+        
+        // Add interactivity
+        sciChartSurface.chartModifiers.add(new SciChart.LegendModifier({
+            showCheckboxes: false,
+            orientation: SciChart.ELegendOrientation.Horizontal,
+            placement: SciChart.ELegendPlacement.TopLeft
+        }));
+        sciChartSurface.chartModifiers.add(new SciChart.ZoomPanModifier());
+        sciChartSurface.chartModifiers.add(new SciChart.MouseWheelZoomModifier());
+        sciChartSurface.chartModifiers.add(new SciChart.RolloverModifier({ showTooltip: true }));
+        
+        sciChartSurface.zoomExtents();
+        
+    } catch (error) {
+        console.error('Error plotting feature chart:', error);
+        chartDiv.innerHTML = '<div class="text-center text-red-500 py-4">Error loading chart</div>';
+    }
 }
 
 // Load and plot climate data
