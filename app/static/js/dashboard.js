@@ -1,4 +1,7 @@
 // Dashboard JavaScript for Disease Outbreak Forecasting
+//
+
+// Configure SciChart to load WASM correctly
 SciChart.SciChartSurface.configure({
     wasmUrl: "https://cdn.jsdelivr.net/npm/scichart@4.0.897/_wasm/scichart2d.wasm"
 });
@@ -34,13 +37,11 @@ async function loadCurrentStatus() {
         
     } catch (error) {
         console.error('Error loading current status:', error);
-        // Fallback UI for error
         const banner = document.getElementById('alertBanner');
         if(banner) banner.innerHTML = '<div class="text-red-600 font-bold p-4">Error connecting to server. Please refresh.</div>';
     }
 }
 
-// Create status card (Updated to match new UI design)
 function createStatusCard(disease) {
     const card = document.createElement('div');
     card.className = 'bg-white p-6 rounded-xl shadow-[0_2px_10px_-3px_rgba(6,81,237,0.1)] border border-slate-100 transition-all duration-300 hover:shadow-lg hover:-translate-y-1';
@@ -48,7 +49,6 @@ function createStatusCard(disease) {
     const isIncreasing = disease.trend === 'increasing';
     const trendColor = isIncreasing ? 'red' : 'emerald';
     
-    // Icons
     const trendIcon = isIncreasing 
         ? `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12 1.5a.75.75 0 01.75.75V11.25l1.97-1.97a.75.75 0 111.06 1.06l-3.25 3.25a.75.75 0 01-1.06 0L8.22 10.34a.75.75 0 111.06-1.06l1.97 1.97V2.25A.75.75 0 0112 1.5z" clip-rule="evenodd" /></svg>`
         : `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8 18.5a.75.75 0 01-.75-.75V8.75L5.28 10.72a.75.75 0 01-1.06-1.06l3.25-3.25a.75.75 0 011.06 0l3.25 3.25a.75.75 0 11-1.06 1.06L9.75 8.75v9A.75.75 0 018 18.5z" clip-rule="evenodd" /></svg>`;
@@ -84,7 +84,6 @@ function updateAlertBanner(data) {
     });
 
     let alertConfig = {};
-    // Logic matching your original rules
     if (highestCases > 100) {
         alertConfig = {
             level: 'High',
@@ -134,11 +133,9 @@ function setupDiseaseButtons() {
         const button = event.target.closest('.disease-btn');
         if (!button) return;
 
-        // Active state toggling
         container.querySelectorAll('.disease-btn').forEach(btn => btn.classList.remove('active'));
         button.classList.add('active');
         
-        // Load Data
         const disease = button.getAttribute('data-disease');
         loadDiseaseForecasts(disease);
     });
@@ -146,30 +143,75 @@ function setupDiseaseButtons() {
 
 // --- FORECAST LOADING ---
 
+// async function loadDiseaseForecasts(disease) {
+//     currentDisease = disease;
+//     document.getElementById('selectedDisease').textContent = disease;
+
+//     const forecastChartDiv = document.getElementById('forecastChart');
+//     const climateChartDiv = document.getElementById('climateChart');
+//     const featureContainer = document.getElementById('featureFactorsContainer');
+
+//     const loaderHTML = (text) => `
+//         <div class="text-center text-slate-500 chart-loader py-12">
+//             <svg class="animate-spin h-8 w-8 text-sky-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+//                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+//                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+//             </svg>
+//             <p>${text}</p>
+//         </div>`;
+
+//     forecastChartDiv.innerHTML = loaderHTML(`Generating ${disease} Forecast...`);
+//     climateChartDiv.innerHTML = loaderHTML("Loading Climate Data...");
+//     featureContainer.innerHTML = loaderHTML("Analyzing Feature Impact...");
+    
+//     try {
+//         const forecastResponse = await fetch(`/api/forecast/${disease}`);
+//         const forecastData = await forecastResponse.json();
+        
+//         if (forecastData.error) throw new Error(forecastData.error);
+
+//         currentForecastData = forecastData;
+        
+//         updateAlertBox(forecastData);
+//         updateStatistics(forecastData);
+//         renderDataTable(forecastData);
+//         setupExportButton();
+        
+//         // Use Promise.all to load all charts in parallel
+//         await Promise.all([
+//             plotForecastChart(forecastData),
+//             loadClimateData(disease),
+//             loadFeatureFactors(disease)
+//         ]);
+        
+//     } catch (error) {
+//         console.error('Error loading forecast:', error);
+//         forecastChartDiv.innerHTML = `<div class="flex items-center justify-center h-full text-red-500">Error: ${error.message}</div>`;
+//     }
+// }
+// -- WALA CLIMATE --
+
 async function loadDiseaseForecasts(disease) {
     currentDisease = disease;
     document.getElementById('selectedDisease').textContent = disease;
 
-    // 1. Reset Charts to Loading State
     const forecastChartDiv = document.getElementById('forecastChart');
-    const climateChartDiv = document.getElementById('climateChart');
+    // [MODIFIED] Check if element exists before accessing it
+    const climateChartDiv = document.getElementById('climateChart'); 
     const featureContainer = document.getElementById('featureFactorsContainer');
 
-    const loaderHTML = (text) => `
-        <div class="text-center text-slate-500 chart-loader py-12">
-            <svg class="animate-spin h-8 w-8 text-sky-600 mx-auto mb-3" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <p>${text}</p>
-        </div>`;
+    const loaderHTML = (text) => `...`; // (Keep your existing loader code)
 
     forecastChartDiv.innerHTML = loaderHTML(`Generating ${disease} Forecast...`);
-    climateChartDiv.innerHTML = loaderHTML("Loading Climate Data...");
+    
+    // [MODIFIED] Only set loader if the element exists
+    if (climateChartDiv) {
+        climateChartDiv.innerHTML = loaderHTML("Loading Climate Data...");
+    }
+    
     featureContainer.innerHTML = loaderHTML("Analyzing Feature Impact...");
     
     try {
-        // 2. Fetch Forecast Data
         const forecastResponse = await fetch(`/api/forecast/${disease}`);
         const forecastData = await forecastResponse.json();
         
@@ -182,14 +224,18 @@ async function loadDiseaseForecasts(disease) {
         renderDataTable(forecastData);
         setupExportButton();
         
-        // Render Main Chart
-        await plotForecastChart(forecastData);
-        
-        // 3. Trigger Parallel Loads for Secondary Data
-        await Promise.all([
-            loadClimateData(disease),
+        // [MODIFIED] Remove loadClimateData from the Promise.all array
+        const tasks = [
+            plotForecastChart(forecastData),
             loadFeatureFactors(disease)
-        ]);
+        ];
+
+        // Optional: Only add climate task if the element exists
+        if (climateChartDiv) {
+            tasks.push(loadClimateData(disease));
+        }
+
+        await Promise.all(tasks);
         
     } catch (error) {
         console.error('Error loading forecast:', error);
@@ -197,7 +243,8 @@ async function loadDiseaseForecasts(disease) {
     }
 }
 
-// --- FEATURE IMPACT LOGIC (Restored & Improved) ---
+
+// --- FEATURE IMPACT LOGIC ---
 
 async function loadFeatureFactors(disease) {
     try {
@@ -230,14 +277,12 @@ function displayFeatureFactors(data) {
     
     tabsNav.classList.remove('hidden');
     
-    // 1. Create Tabs
     const navList = document.createElement('div');
     navList.className = 'flex gap-4';
     
     data.categories.forEach((category, index) => {
         const btn = document.createElement('button');
         const isActive = index === 0;
-        // Styling matches style.css .tab-btn
         btn.className = `tab-btn px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 ${isActive ? 'active border-sky-600 text-sky-700' : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'}`;
         btn.textContent = category.name;
         btn.onclick = () => switchTab(index, btn);
@@ -247,17 +292,13 @@ function displayFeatureFactors(data) {
     tabsNav.innerHTML = '';
     tabsNav.appendChild(navList);
     
-    // 2. Create Panels
     data.categories.forEach((category, index) => {
         const panel = document.createElement('div');
         panel.className = `feature-panel fade-in-up ${index === 0 ? '' : 'hidden'}`;
         panel.setAttribute('data-index', index);
         
-        // Inner Content
         let html = `<div class="grid grid-cols-1 gap-4">`;
-        
         category.features.forEach(feature => {
-            // Calculate styles based on impact
             const impact = feature.impact_percentage;
             let colorClass = 'bg-slate-400';
             if(impact > 50) colorClass = 'bg-red-500';
@@ -285,7 +326,6 @@ function displayFeatureFactors(data) {
                 </div>
             `;
         });
-        
         html += `</div>`;
         panel.innerHTML = html;
         container.appendChild(panel);
@@ -293,14 +333,12 @@ function displayFeatureFactors(data) {
 }
 
 function switchTab(selectedIndex, clickedBtn) {
-    // Update Buttons
     const buttons = document.querySelectorAll('.tab-btn');
     buttons.forEach(btn => {
         btn.className = 'tab-btn px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300';
     });
     clickedBtn.className = 'tab-btn px-4 py-2 text-sm font-medium whitespace-nowrap border-b-2 border-sky-600 text-sky-700 active';
 
-    // Update Panels
     const panels = document.querySelectorAll('.feature-panel');
     panels.forEach((panel, index) => {
         if(index === selectedIndex) {
@@ -311,8 +349,7 @@ function switchTab(selectedIndex, clickedBtn) {
     });
 }
 
-
-// --- CLIMATE CHART (Fixed Loading State) ---
+// --- CLIMATE CHART (Fixed: Light Mode & Date Formatting) ---
 
 async function loadClimateData(disease) {
     const chartDiv = document.getElementById('climateChart');
@@ -321,14 +358,9 @@ async function loadClimateData(disease) {
         if (!response.ok) throw new Error("Failed to fetch climate data");
         
         const data = await response.json();
-        
         if (data.error) throw new Error(data.error);
-        if (!data.temperature || !data.rainfall) throw new Error("Incomplete climate data");
-
-        // Clear Loader
-        chartDiv.innerHTML = ''; 
         
-        // Plot
+        chartDiv.innerHTML = ''; 
         await plotClimateChart(data); 
         
     } catch (error) {
@@ -345,34 +377,45 @@ async function loadClimateData(disease) {
 
 async function plotClimateChart(data) {
     const chartDiv = document.getElementById('climateChart');
-    const { sciChartSurface, wasmContext } = await SciChart.SciChartSurface.create(chartDiv);
     
-    // Axes Configuration
-    sciChartSurface.xAxes.add(new SciChart.DateTimeNumericAxis(wasmContext, { id: "dateAxis" }));
+    // FIX 1: Pass the Light theme as a NEW OBJECT, not a string
+    const { sciChartSurface, wasmContext } = await SciChart.SciChartSurface.create(chartDiv, {
+        theme: new SciChart.SciChartJSLightTheme()
+    });
     
-    // Left Y-Axis (Temp)
+    sciChartSurface.background = "transparent";
+
+    // FIX 2: DateTimeNumericAxis expects SECONDS, but JS dates are MILLISECONDS
+    const xAxis = new SciChart.DateTimeNumericAxis(wasmContext, { 
+        id: "dateAxis",
+        axisTitle: "Date",
+        labelStyle: { color: "#64748b" }, // slate-500
+        majorGridLineStyle: { color: "#e2e8f0" } // slate-200
+    });
+    sciChartSurface.xAxes.add(xAxis);
+    
     sciChartSurface.yAxes.add(new SciChart.NumericAxis(wasmContext, {
         id: "tempAxis",
         axisTitle: "Temp (°C)",
         axisAlignment: SciChart.EAxisAlignment.Left,
-        labelStyle: { color: "#f43f5e" }
+        labelStyle: { color: "#f43f5e" }, // Rose-500
+        majorGridLineStyle: { color: "#e2e8f0" }
     }));
     
-    // Right Y-Axis (Rain)
     sciChartSurface.yAxes.add(new SciChart.NumericAxis(wasmContext, {
         id: "rainAxis",
         axisTitle: "Rain (mm)",
         axisAlignment: SciChart.EAxisAlignment.Right,
-        labelStyle: { color: "#3b82f6" }
+        labelStyle: { color: "#0ea5e9" }, // Sky-500
+        majorGridLineStyle: { strokeDashArray: [2, 2], color: "#e2e8f0" }
     }));
 
-    // Data Series
-    const dates = data.dates.map(d => new Date(d).getTime());
+    // Convert Milliseconds to Seconds for SciChart
+    const dates = data.dates.map(d => new Date(d).getTime() / 1000);
     
-    const tempSeries = new SciChart.XyDataSeries(wasmContext, { xValues: dates, yValues: data.temperature });
-    const rainSeries = new SciChart.XyDataSeries(wasmContext, { xValues: dates, yValues: data.rainfall });
+    const tempSeries = new SciChart.XyDataSeries(wasmContext, { xValues: dates, yValues: data.temperature, dataSeriesName: "Temperature" });
+    const rainSeries = new SciChart.XyDataSeries(wasmContext, { xValues: dates, yValues: data.rainfall, dataSeriesName: "Rainfall" });
     
-    // Render Series
     sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
         dataSeries: tempSeries,
         yAxisId: "tempAxis",
@@ -383,24 +426,103 @@ async function plotClimateChart(data) {
     sciChartSurface.renderableSeries.add(new SciChart.FastColumnRenderableSeries(wasmContext, {
         dataSeries: rainSeries,
         yAxisId: "rainAxis",
-        fill: "rgba(59, 130, 246, 0.5)",
-        stroke: "#3b82f6"
+        fill: "rgba(14, 165, 233, 0.5)",
+        stroke: "#0ea5e9"
+    }));
+    
+    // FIX 3: Add Legend
+    sciChartSurface.chartModifiers.add(new SciChart.LegendModifier({ 
+        showCheckboxes: false, 
+        showSeriesMarkers: true, 
+        placement: SciChart.ELegendPlacement.TopLeft 
     }));
     
     sciChartSurface.zoomExtents();
 }
 
 
-// --- UTILITIES (Alerts, Stats, Table, CSV) ---
+// --- FORECAST CHART (Fixed: Light Mode & Date Formatting) ---
+
+async function plotForecastChart(data) {
+    const chartDiv = document.getElementById('forecastChart');
+    chartDiv.innerHTML = '';
+    
+    // FIX 1: Pass the Light theme as a NEW OBJECT
+    const { sciChartSurface, wasmContext } = await SciChart.SciChartSurface.create(chartDiv, {
+        theme: new SciChart.SciChartJSLightTheme()
+    });
+    
+    sciChartSurface.background = "transparent";
+    
+    // FIX 2: Ensure correct Axis Type
+    sciChartSurface.xAxes.add(new SciChart.DateTimeNumericAxis(wasmContext, { 
+        drawMajorGridLines: true, 
+        majorGridLineStyle: { color: "#e2e8f0" },
+        labelStyle: { color: "#64748b" },
+        axisTitle: "Date"
+    }));
+    
+    sciChartSurface.yAxes.add(new SciChart.NumericAxis(wasmContext, { 
+        axisTitle: "Predicted Cases",
+        drawMajorGridLines: true, 
+        majorGridLineStyle: { color: "#e2e8f0" },
+        labelStyle: { color: "#64748b" }
+    }));
+
+    // Convert Milliseconds to Seconds
+    const forecastDates = data.forecast_dates.map(d => new Date(d).getTime() / 1000);
+    const historicalDates = data.historical_dates.map(d => new Date(d).getTime() / 1000);
+
+    const histSeries = new SciChart.XyDataSeries(wasmContext, { 
+        xValues: historicalDates, 
+        yValues: data.historical_cases, 
+        dataSeriesName: "Historical Cases" 
+    });
+    
+    const predSeries = new SciChart.XyDataSeries(wasmContext, { 
+        xValues: forecastDates, 
+        yValues: data.predicted_cases, 
+        dataSeriesName: "Forecast" 
+    });
+
+    sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
+        dataSeries: histSeries,
+        stroke: "#0ea5e9", // Sky-500
+        strokeThickness: 3
+    }));
+
+    sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
+        dataSeries: predSeries,
+        stroke: "#f43f5e", // Rose-500
+        strokeThickness: 3,
+        strokeDashArray: [5, 5]
+    }));
+    
+    // Modifiers
+    sciChartSurface.chartModifiers.add(new SciChart.ZoomPanModifier());
+    sciChartSurface.chartModifiers.add(new SciChart.MouseWheelZoomModifier());
+    sciChartSurface.chartModifiers.add(new SciChart.RolloverModifier({ 
+        showTooltip: true, 
+        tooltipColor: "#ffffff", 
+        tooltipTextColor: "#1e293b" 
+    }));
+    
+    // FIX 3: Add Legend
+    sciChartSurface.chartModifiers.add(new SciChart.LegendModifier({ 
+        showCheckboxes: true, 
+        showSeriesMarkers: true, 
+        placement: SciChart.ELegendPlacement.TopLeft 
+    }));
+    
+    sciChartSurface.zoomExtents();
+}
+
+// --- UTILITIES ---
 
 function updateAlertBox(data) {
     const alertBox = document.getElementById('alertBox');
-    const alertLevel = document.getElementById('alertLevel');
-    const alertMessage = document.getElementById('alertMessage');
     
     alertBox.style.display = 'flex';
-    
-    // Reset classes
     alertBox.className = 'rounded-lg p-4 mb-6 border-l-4 shadow-sm animate-fade-in flex items-center';
     
     let colorClass = 'border-emerald-500 bg-emerald-50';
@@ -431,49 +553,6 @@ function updateStatistics(data) {
     }
     document.getElementById('peakCases').textContent = Math.max(...data.predicted_cases);
     document.getElementById('lastUpdated').textContent = data.last_updated;
-}
-
-async function plotForecastChart(data) {
-    const chartDiv = document.getElementById('forecastChart');
-    chartDiv.innerHTML = '';
-    
-    const { sciChartSurface, wasmContext } = await SciChart.SciChartSurface.create(chartDiv);
-    
-    sciChartSurface.xAxes.add(new SciChart.DateTimeNumericAxis(wasmContext, { 
-        drawMajorGridLines: true, 
-        majorGridLineStyle: { stroke: "#e2e8f0" } 
-    }));
-    
-    sciChartSurface.yAxes.add(new SciChart.NumericAxis(wasmContext, { 
-        axisTitle: "Predicted Cases",
-        drawMajorGridLines: true, 
-        majorGridLineStyle: { stroke: "#e2e8f0" } 
-    }));
-
-    const forecastDates = data.forecast_dates.map(d => new Date(d).getTime());
-    const historicalDates = data.historical_dates.map(d => new Date(d).getTime());
-
-    const histSeries = new SciChart.XyDataSeries(wasmContext, { xValues: historicalDates, yValues: data.historical_cases });
-    const predSeries = new SciChart.XyDataSeries(wasmContext, { xValues: forecastDates, yValues: data.predicted_cases });
-
-    sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
-        dataSeries: histSeries,
-        stroke: "#0ea5e9", // Sky Blue
-        strokeThickness: 3
-    }));
-
-    sciChartSurface.renderableSeries.add(new SciChart.FastLineRenderableSeries(wasmContext, {
-        dataSeries: predSeries,
-        stroke: "#f43f5e", // Rose Red
-        strokeThickness: 3,
-        strokeDashArray: [5, 5]
-    }));
-    
-    sciChartSurface.chartModifiers.add(new SciChart.ZoomPanModifier());
-    sciChartSurface.chartModifiers.add(new SciChart.MouseWheelZoomModifier());
-    sciChartSurface.chartModifiers.add(new SciChart.RolloverModifier({ showTooltip: true }));
-    
-    sciChartSurface.zoomExtents();
 }
 
 function renderDataTable(data) {
@@ -511,7 +590,6 @@ function setupExportButton() {
     if (currentForecastData) {
         btn.classList.remove('invisible');
         btn.disabled = false;
-        // Clean clone to remove old listeners
         const newBtn = btn.cloneNode(true);
         btn.parentNode.replaceChild(newBtn, btn);
         newBtn.addEventListener('click', () => {
