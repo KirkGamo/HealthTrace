@@ -68,8 +68,8 @@ def train_model(disease='Dengue', model_type='LSTM'):
     history = model.train(
         X_train, y_train,
         X_val, y_val,
-        epochs=50,
-        batch_size=32,
+        epochs=100,
+        batch_size=64,  # Updated from hyperparameter tuning: Config #12 (best Test MAE)
         model_path=model_path
     )
     
