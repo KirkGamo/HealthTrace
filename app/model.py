@@ -14,7 +14,7 @@ class DiseaseOutbreakModel:
         self.model_type = model_type
         self.model = None
         
-    def build_model(self, units=64):
+    def build_model(self, units=64, dropout=0.3):
         """Build LSTM or GRU model architecture"""
         model = Sequential()
         
@@ -22,25 +22,25 @@ class DiseaseOutbreakModel:
             # First LSTM layer with return sequences
             model.add(LSTM(units=units, return_sequences=True, 
                           input_shape=(self.sequence_length, self.n_features)))
-            model.add(Dropout(0.2))
+            model.add(Dropout(dropout))
             
             # Second LSTM layer
             model.add(LSTM(units=units//2, return_sequences=False))
-            model.add(Dropout(0.2))
+            model.add(Dropout(dropout))
             
         elif self.model_type == 'GRU':
             # First GRU layer with return sequences
             model.add(GRU(units=units, return_sequences=True,
                          input_shape=(self.sequence_length, self.n_features)))
-            model.add(Dropout(0.2))
+            model.add(Dropout(dropout))
             
             # Second GRU layer
             model.add(GRU(units=units//2, return_sequences=False))
-            model.add(Dropout(0.2))
+            model.add(Dropout(dropout))
         
         # Dense layers for output
         model.add(Dense(units=32, activation='relu'))
-        model.add(Dropout(0.2))
+        model.add(Dropout(dropout))
         model.add(Dense(units=1))  # Output: predicted disease cases
         
         # Compile model

@@ -54,7 +54,7 @@ def train_model(disease='Dengue', model_type='LSTM'):
         n_features=X.shape[2],
         model_type=model_type
     )
-    model.build_model(units=64)
+    model.build_model(units=64, dropout=0.3)  # Config #15: Optimal dropout rate
     
     print(model.model.summary())
     
@@ -69,7 +69,7 @@ def train_model(disease='Dengue', model_type='LSTM'):
         X_train, y_train,
         X_val, y_val,
         epochs=100,
-        batch_size=64,  # Updated from hyperparameter tuning: Config #12 (best Test MAE)
+        batch_size=32,  # Config #15: Best overall performance (R²=0.52, Test MAE=0.0102)
         model_path=model_path
     )
     
