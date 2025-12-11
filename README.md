@@ -11,34 +11,92 @@ A Python-based web application to forecast disease outbreaks in the Philippines 
 
 ## Features
 
-- 🤖 **Deep Learning Models**: LSTM/GRU neural networks for time-series forecasting
-- 📊 **Interactive Dashboard**: Real-time visualization of disease forecasts and trends
-- 🌡️ **Climate Integration**: Correlates climate factors (temperature, humidity, rainfall) with disease patterns
+- 🤖 **Dual Model Architecture**: LSTM & GRU neural networks for time-series forecasting
+- 📊 **Interactive Dashboard**: Real-time visualization with correlation-based feature impact analysis
+- 🌡️ **Comprehensive Climate Integration**: 52+ features including temperature, humidity, rainfall, air quality, vegetation indices
 - ⚠️ **Early Warning System**: Alert levels based on predicted outbreak severity
-- 🏥 **Multi-Disease Support**: Tracks Dengue, Influenza, Typhoid, and Malaria
+- 🏥 **Multi-Disease Support**: Tracks Dengue, Typhoid, and Leptospirosis
 - 📈 **14-Day Forecasts**: Predicts disease cases two weeks in advance
+- 🎨 **Modern UI/UX**: Gradient backgrounds, smooth animations, toast notifications
+- ⚡ **Optimized Models**: 25.2% accuracy improvement through hyperparameter tuning
+- 📊 **Feature Impact Analysis**: Interactive tabbed navigation with 9 feature categories
+- 🔄 **Model Comparison**: Switch between LSTM and GRU architectures
 
 ## Project Structure
 
 ```
 HealthTrace/
-├── app/
-│   ├── data/                    # Historical climate and health data
-│   ├── models/                  # Trained LSTM/GRU models
+├── app/                        # Main application package
+│   ├── data/                   # Historical climate and health data (52+ features)
+│   ├── models/                 # Trained LSTM/GRU models (.h5 files)
 │   ├── static/
 │   │   ├── css/
-│   │   │   └── style.css       # Dashboard styling
+│   │   │   └── style.css      # Dashboard styling with animations
 │   │   └── js/
-│   │       └── dashboard.js    # Frontend JavaScript
+│   │       └── dashboard.js   # Frontend JavaScript with interactive features
 │   ├── templates/
-│   │   └── index.html          # Main dashboard template
-│   ├── data_utils.py           # Data processing utilities
-│   └── model.py                # LSTM/GRU model implementation
-├── app.py                      # Flask backend application
-├── config.py                   # Configuration settings
-├── train_model.py             # Model training script
+│   │   └── index.html         # Main dashboard template
+│   ├── data_utils.py          # Data processing and feature engineering utilities
+│   ├── model.py               # LSTM/GRU model implementation
+│   └── __init__.py            # Package initialization
+│
+├── scripts/                    # Utility scripts organized by purpose
+│   ├── data_preparation/      # Data extraction and preparation
+│   │   ├── prepare_cchain_data.py
+│   │   ├── prepare_leptospirosis.py
+│   │   ├── extract_airqual_vegetation.py
+│   │   ├── extract_atmosphere_features.py
+│   │   ├── extract_healthcare_wealth.py
+│   │   └── extract_sanitation_waterbody.py
+│   │
+│   ├── feature_engineering/   # Feature activation and merging
+│   │   ├── activate_*.py      # Feature activation scripts
+│   │   ├── merge_*.py         # Feature merging scripts
+│   │   ├── enhance_features.py
+│   │   ├── explore_atmosphere_data.py
+│   │   └── explore_available_features.py
+│   │
+│   ├── testing/               # Test scripts for validation
+│   │   ├── test_app.py
+│   │   ├── test_atmosphere_features.py
+│   │   ├── test_features.py
+│   │   ├── test_fixes.py
+│   │   └── test_full_features.py
+│   │
+│   ├── verification/          # Model and data verification
+│   │   ├── check_leptospirosis.py
+│   │   ├── check_model_shape.py
+│   │   ├── compare_models.py
+│   │   ├── verify_atmosphere_models.py
+│   │   ├── verify_full_models.py
+│   │   ├── verify_healthwealth_models.py
+│   │   └── verify_sanwater_models.py
+│   │
+│   └── utilities/             # Utility and optimization scripts
+│       ├── hyperparameter_tuning.py
+│       └── quick_fix_revert.py
+│
+├── docs/                       # Documentation and project reports
+│   ├── BEST_CONFIGURATION.md  # Hyperparameter tuning results
+│   ├── CCHAIN_INTEGRATION.md  # Climate data integration guide
+│   ├── ENHANCED_FEATURES_GUIDE.md
+│   ├── HYPERPARAMETER_TUNING.md
+│   ├── IMPLEMENTATION_SUMMARY.md
+│   ├── INTEGRATION_SUMMARY.md
+│   ├── PULL_REQUEST.md        # Feature impact & UI/UX PR
+│   ├── PULL_REQUEST_GRU.md    # GRU model implementation PR
+│   └── PULL_REQUEST_HYPERPARAMETER.md  # Optimization PR
+│
+├── hyperparameter_results/    # Tuning experiment results
+│   ├── *_tuning_*.json        # Detailed training history
+│   └── *_summary_*.csv        # Comparison tables
+│
+├── app.py                     # Flask backend application
+├── config.py                  # Configuration settings
+├── train_model.py             # Model training script (optimized)
+├── run_app.py                 # Application runner
 ├── requirements.txt           # Python dependencies
-└── README.md                  # Documentation
+└── README.md                  # This file
 ```
 
 ## Installation
@@ -97,10 +155,40 @@ HealthTrace/
 ### Web Dashboard
 
 1. **View Current Status**: The dashboard displays current disease cases and trends
-2. **Select a Disease**: Click on any disease button (Dengue, Influenza, Typhoid, Malaria)
+2. **Select a Disease**: Click on any disease button (Dengue, Typhoid, Leptospirosis)
 3. **View Forecasts**: See 14-day predictions with historical context
 4. **Monitor Alerts**: Check alert levels (LOW, MEDIUM, HIGH) based on predictions
 5. **Analyze Climate**: View climate factors affecting disease patterns
+6. **Explore Feature Impact**: Interactive correlation-based impact analysis with 52+ features
+
+### Scripts Organization
+
+The repository includes various utility scripts organized by purpose:
+
+**Data Preparation** (`scripts/data_preparation/`):
+- Extract and prepare climate data from various sources
+- Process disease case data
+- Integrate CCHAIN climate datasets
+
+**Feature Engineering** (`scripts/feature_engineering/`):
+- Activate and merge additional features (air quality, vegetation, healthcare, sanitation)
+- Explore available features and their distributions
+- Enhance feature sets for improved model performance
+
+**Testing** (`scripts/testing/`):
+- Unit tests for application functionality
+- Feature validation tests
+- Integration tests for data pipelines
+
+**Verification** (`scripts/verification/`):
+- Verify model architectures and shapes
+- Compare LSTM vs GRU model performance
+- Validate data quality and completeness
+
+**Utilities** (`scripts/utilities/`):
+- Hyperparameter tuning framework (achieved 25.2% accuracy improvement)
+- Performance optimization tools
+- Quick fixes and maintenance scripts
 
 ### API Endpoints
 
@@ -118,35 +206,64 @@ curl http://localhost:5000/api/forecast/Dengue
 
 ## Model Architecture
 
-The forecasting system uses LSTM (Long Short-Term Memory) neural networks:
+The forecasting system uses both LSTM and GRU neural network architectures:
 
-- **Input Layer**: 30-day sequences of climate and health data
+### LSTM (Long Short-Term Memory)
+- **Input Layer**: 30-day sequences of climate and health data (52+ features)
 - **LSTM Layers**: Two stacked LSTM layers (64 and 32 units)
 - **Dropout**: 0.2 dropout rate for regularization
 - **Dense Layers**: Fully connected layers for prediction
 - **Output**: Single value (predicted disease cases)
 
-### Training Details
+### GRU (Gated Recurrent Unit)
+- **Input Layer**: 30-day sequences with comprehensive feature set
+- **GRU Layers**: Two stacked GRU layers (64 and 32 units)
+- **Dropout**: 0.2 dropout rate
+- **Dense Layers**: Fully connected output layers
+- **Output**: Predicted case count
+
+### Training Details (Optimized Configuration)
 
 - **Loss Function**: Mean Squared Error (MSE)
-- **Optimizer**: Adam
-- **Batch Size**: 32
-- **Epochs**: 50 (with early stopping)
-- **Validation Split**: 20%
+- **Optimizer**: Adam (best performer vs RMSprop, SGD)
+- **Learning Rate**: 0.001 (optimal through tuning)
+- **Batch Size**: 64 (increased from 32 for better generalization)
+- **Epochs**: 100 (increased from 50 for better convergence)
+- **Validation Split**: 15% validation, 15% test, 70% training
+- **Performance**: 25.2% improvement in Test MAE (0.013288 → 0.009936)
+- **R² Score**: Improved from -0.223 to 0.168 (positive correlation achieved)
 
 ## Data
 
-The application uses historical data with the following features:
+The application uses comprehensive historical data with 52+ features:
 
-- **Climate Features**:
-  - Temperature (°C)
-  - Humidity (%)
-  - Rainfall (mm)
+### Climate Features
+- **Temperature**: Min, max, average (°C)
+- **Precipitation**: Rainfall patterns (mm)
+- **Humidity**: Relative humidity (%)
+- **Atmospheric Conditions**: Pressure, wind patterns
 
-- **Health Features**:
-  - Daily disease cases
+### Air Quality
+- **PM2.5**: Particulate matter concentration
+- **NO2**: Nitrogen dioxide levels
+- **Pollutants**: Various air quality indicators
 
-Sample data is automatically generated for demonstration purposes, simulating realistic patterns for the Philippines climate and disease trends.
+### Environmental Features
+- **Vegetation Index (NDVI)**: Land cover and greenness
+- **Water Bodies**: Proximity and water quality indicators
+- **Land Use**: Urban/rural classification
+
+### Socioeconomic Features
+- **Healthcare Access**: Health facility POI counts and distribution
+- **Sanitation**: Water access and sanitation POI data
+- **Wealth Index**: Relative wealth indicators
+- **Infrastructure**: Building density and internet speed
+
+### Health Features
+- **Daily Disease Cases**: Historical case counts
+- **Temporal Features**: Seasonal patterns, trends
+
+Data sources include CCHAIN climate datasets, OpenStreetMap POI data, geospatial indices, and health surveillance systems.
 
 ## Configuration
 
