@@ -14,7 +14,7 @@ class DiseaseOutbreakModel:
         self.model_type = model_type
         self.model = None
         
-    def build_model(self, units=64, dropout=0.3):
+    def build_model(self, units=64, dropout=0.3, learning_rate=0.001):
         """Build LSTM or GRU model architecture"""
         model = Sequential()
         
@@ -43,8 +43,9 @@ class DiseaseOutbreakModel:
         model.add(Dropout(dropout))
         model.add(Dense(units=1))  # Output: predicted disease cases
         
-        # Compile model
-        model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+        # Compile model with specified learning rate
+        optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
+        model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
         
         self.model = model
         return model
