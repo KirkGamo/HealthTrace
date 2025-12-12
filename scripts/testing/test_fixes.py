@@ -2,11 +2,7 @@
 Quick test to verify CCHAIN data integration fixes
 """
 import sys
-import os
-
-# Add project root to path (go up two levels: testing -> scripts -> root)
-project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-sys.path.insert(0, project_root)
+sys.path.append('.')
 
 from app.data_utils import DataProcessor
 import pandas as pd
