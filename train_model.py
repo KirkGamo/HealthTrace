@@ -54,8 +54,7 @@ def train_model(disease='Dengue', model_type='LSTM'):
         n_features=X.shape[2],
         model_type=model_type
     )
-    # Config #15: optimal hyperparameters (R²=0.52, RMSE=0.01428, MAE=0.010150)
-    model.build_model(units=64, dropout=0.3, learning_rate=0.001)
+    model.build_model(units=64, dropout=0.3)  # Config #15: Optimal dropout rate
     
     print(model.model.summary())
     
