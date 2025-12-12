@@ -10,7 +10,8 @@ from datetime import datetime
 
 # Constants
 ILOILO_CITY_CODE = 'PH063022000'  # adm3_pcode for Iloilo City
-DATA_DIR = os.path.join(os.path.dirname(__file__), 'app', 'data')
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DATA_DIR = os.path.join(project_root, 'app', 'data')
 
 # Disease mappings from CCHAIN to HealthTrace
 DISEASE_MAPPING = {

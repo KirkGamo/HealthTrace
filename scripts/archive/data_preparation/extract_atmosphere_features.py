@@ -1,8 +1,12 @@
 import pandas as pd
 import numpy as np
+import os
+
+# Set up project root path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 print("Loading location data to get Iloilo City barangays...")
-location_df = pd.read_csv('app/data/location.csv')
+location_df = pd.read_csv(os.path.join(project_root, 'app/data/location.csv'))
 iloilo_brgys = location_df[location_df['adm3_pcode'] == 'PH063022000']['adm4_pcode'].tolist()
 print(f"Found {len(iloilo_brgys)} barangays in Iloilo City")
 
@@ -10,7 +14,7 @@ print("\nLoading climate_atmosphere_downscaled.csv in chunks...")
 chunk_size = 100000
 iloilo_chunks = []
 
-for i, chunk in enumerate(pd.read_csv('app/data/climate_atmosphere_downscaled.csv', chunksize=chunk_size)):
+for i, chunk in enumerate(pd.read_csv(os.path.join(project_root, 'app/data/climate_atmosphere_downscaled.csv'), chunksize=chunk_size)):
     # Filter for Iloilo City barangays
     iloilo_chunk = chunk[chunk['adm4_pcode'].isin(iloilo_brgys)]
     if len(iloilo_chunk) > 0:
@@ -52,6 +56,6 @@ print("\nStatistics:")
 print(daily_climate.describe())
 
 # Save the processed data
-output_file = 'app/data/iloilo_climate_atmosphere.csv'
+output_file = os.path.join(project_root, 'app/data/iloilo_climate_atmosphere.csv')
 daily_climate.to_csv(output_file, index=False)
 print(f"\n✓ Saved to: {output_file}")

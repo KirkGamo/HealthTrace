@@ -1,11 +1,15 @@
 import pandas as pd
 import numpy as np
+import os
 
-print("Merging Healthcare/Wealth features with disease data...\n")
+# Set up project root path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+print("Merging Healthcare/Wealth Index features with disease data...\n")
 
 # Load the healthcare and wealth data
 print("Loading healthcare/wealth features...")
-health_wealth = pd.read_csv('app/data/iloilo_healthcare_wealth.csv')
+health_wealth = pd.read_csv(os.path.join(project_root, 'app/data/iloilo_healthcare_wealth.csv'))
 health_wealth['date'] = pd.to_datetime(health_wealth['date'])
 print(f"Healthcare/wealth records: {len(health_wealth)}")
 print(f"Date range: {health_wealth['date'].min()} to {health_wealth['date'].max()}")
@@ -25,7 +29,7 @@ for disease in diseases:
     print("="*60)
     
     # Load current disease data (41 features)
-    input_file = f'app/data/{disease}_historical_data.csv'
+    input_file = os.path.join(project_root, f'app/data/{disease}_historical_data.csv')
     print(f"\nLoading {input_file}...")
     disease_df = pd.read_csv(input_file)
     disease_df['date'] = pd.to_datetime(disease_df['date'])
@@ -56,7 +60,7 @@ for disease in diseases:
         print("✓ No missing values after merge")
     
     # Save the merged data
-    output_file = f'app/data/{disease}_historical_data_with_healthwealth.csv'
+    output_file = os.path.join(project_root, f'app/data/{disease}_historical_data_with_healthwealth.csv')
     merged.to_csv(output_file, index=False)
     
     print(f"\n✓ Saved: {output_file}")

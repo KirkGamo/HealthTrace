@@ -10,7 +10,7 @@ from app.data_utils import DataProcessor
 print("Testing feature extraction with atmosphere features...\n")
 
 processor = DataProcessor()
-df = processor.load_data('app/data/dengue_historical_data.csv')
+df = processor.load_data(os.path.join(project_root, 'app/data/dengue_historical_data.csv'))
 scaled_data = processor.prepare_features(df)
 X, y = processor.create_sequences(scaled_data)
 

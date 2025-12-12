@@ -5,8 +5,11 @@ Run this if you want to use the app immediately without retraining
 
 import shutil
 from pathlib import Path
+import os
 
-DATA_DIR = Path('app/data')
+# Set up project root path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DATA_DIR = Path(project_root) / 'app' / 'data'
 DISEASES = ['dengue', 'typhoid', 'cholera']
 
 def revert_to_original():

@@ -7,7 +7,9 @@ import os
 import shutil
 from pathlib import Path
 
-DATA_DIR = Path('app/data')
+# Set up project root path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+DATA_DIR = Path(project_root) / 'app' / 'data'
 DISEASES = ['dengue', 'typhoid', 'cholera']
 
 def backup_original_files():

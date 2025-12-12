@@ -1,11 +1,15 @@
 import pandas as pd
 import numpy as np
+import os
+
+# Set up project root path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 print("Extracting Air Quality and Vegetation features for Iloilo City...\n")
 
 # Load location data to get Iloilo City barangays
 print("Loading location data...")
-location_df = pd.read_csv('app/data/location.csv')
+location_df = pd.read_csv(os.path.join(project_root, 'app/data/location.csv'))
 iloilo_brgys = location_df[location_df['adm3_pcode'] == 'PH063022000']['adm4_pcode'].tolist()
 print(f"Found {len(iloilo_brgys)} barangays in Iloilo City")
 
@@ -21,7 +25,7 @@ airqual_chunks = []
 # Convert barangay list to set for faster lookup
 iloilo_brgys_set = set(iloilo_brgys)
 
-for i, chunk in enumerate(pd.read_csv('app/data/climate_air_quality.csv', chunksize=chunk_size)):
+for i, chunk in enumerate(pd.read_csv(os.path.join(project_root, 'app/data/climate_air_quality.csv'), chunksize=chunk_size)):
     # Filter for Iloilo City barangays
     iloilo_chunk = chunk[chunk['adm4_pcode'].isin(iloilo_brgys_set)]
     if len(iloilo_chunk) > 0:
@@ -57,7 +61,7 @@ print("="*60)
 print("\nLoading climate_land.csv in chunks...")
 land_chunks = []
 
-for i, chunk in enumerate(pd.read_csv('app/data/climate_land.csv', chunksize=chunk_size)):
+for i, chunk in enumerate(pd.read_csv(os.path.join(project_root, 'app/data/climate_land.csv'), chunksize=chunk_size)):
     # Filter for Iloilo City barangays
     iloilo_chunk = chunk[chunk['adm4_pcode'].isin(iloilo_brgys_set)]
     if len(iloilo_chunk) > 0:
@@ -101,7 +105,7 @@ print(f"\nFinal combined records: {len(combined)}")
 print(f"Date range: {combined['date'].min()} to {combined['date'].max()}")
 
 # Save the processed data
-output_file = 'app/data/iloilo_airqual_vegetation.csv'
+output_file = os.path.join(project_root, 'app/data/iloilo_airqual_vegetation.csv')
 combined.to_csv(output_file, index=False)
 
 print("\n" + "="*60)

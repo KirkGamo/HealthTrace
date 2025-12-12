@@ -1,17 +1,21 @@
 import pandas as pd
 import shutil
+import os
+
+# Set up project root path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 print("Replacing Cholera with Leptospirosis in CCHAIN data...\n")
 
 # Read cholera data as template
-cholera_file = 'app/data/cholera_historical_data.csv'
+cholera_file = os.path.join(project_root, 'app/data/cholera_historical_data.csv')
 print(f"Loading template from {cholera_file}...")
 template_df = pd.read_csv(cholera_file)
 print(f"Template has {len(template_df)} records with {len(template_df.columns)} columns")
 
 # Load disease PIDSR data
 print("\nLoading disease_pidsr_totals.csv...")
-disease_df = pd.read_csv('app/data/disease_pidsr_totals.csv')
+disease_df = pd.read_csv(os.path.join(project_root, 'app/data/disease_pidsr_totals.csv'))
 
 # Filter for Leptospirosis (A27) in Iloilo City
 print("Filtering for Leptospirosis (A27) in Iloilo City...")
@@ -54,7 +58,7 @@ print(f"Columns: {len(merged.columns)}")
 print(f"Date range: {merged['date'].min()} to {merged['date'].max()}")
 
 # Save
-output_file = 'app/data/leptospirosis_historical_data.csv'
+output_file = os.path.join(project_root, 'app/data/leptospirosis_historical_data.csv')
 merged.to_csv(output_file, index=False)
 print(f"\n✓ Saved to: {output_file}")
 
@@ -72,8 +76,8 @@ backup_files = [
 
 print("\nCopying backup files...")
 for old_name, new_name in backup_files:
-    old_path = f'app/data/{old_name}'
-    new_path = f'app/data/{new_name}'
+    old_path = os.path.join(project_root, f'app/data/{old_name}')
+    new_path = os.path.join(project_root, f'app/data/{new_name}')
     try:
         # Read old file, it has cholera data
         # We'll just copy structure for now
