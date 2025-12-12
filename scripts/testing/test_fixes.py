@@ -14,7 +14,7 @@ print("=" * 60)
 # Test 1: Load data
 print("\n1. Testing data loading...")
 dp = DataProcessor(sequence_length=30)
-df = pd.read_csv('app/data/dengue_historical_data.csv')
+df = pd.read_csv(os.path.join(project_root, 'app/data/dengue_historical_data.csv'))
 print(f"   ✓ Loaded {len(df)} records")
 print(f"   ✓ Columns: {list(df.columns)}")
 
@@ -43,7 +43,7 @@ print(f"   ✓ Sample predictions: {inversed[:3]}")
 print("\n5. Testing all diseases...")
 for disease in ['dengue', 'typhoid', 'cholera']:
     dp_test = DataProcessor(sequence_length=30)
-    df_test = pd.read_csv(f'app/data/{disease}_historical_data.csv')
+    df_test = pd.read_csv(os.path.join(project_root, f'app/data/{disease}_historical_data.csv'))
     scaled_test = dp_test.prepare_features(df_test)
     X_test, y_test = dp_test.create_sequences(scaled_test)
     print(f"   ✓ {disease.capitalize()}: {X_test.shape[0]} sequences, {X_test.shape[2]} features")

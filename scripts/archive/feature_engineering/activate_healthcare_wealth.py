@@ -1,6 +1,9 @@
 import shutil
 import os
 
+# Set up project root path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 print("Activating Healthcare/Wealth enhanced data...\n")
 
 diseases = ['dengue', 'typhoid', 'cholera']
@@ -9,9 +12,9 @@ for disease in diseases:
     print(f"Processing {disease}...")
     
     # Paths
-    current_file = f'app/data/{disease}_historical_data.csv'
-    backup_file = f'app/data/{disease}_41feat_backup.csv'
-    new_file = f'app/data/{disease}_historical_data_with_healthwealth.csv'
+    current_file = os.path.join(project_root, f'app/data/{disease}_historical_data.csv')
+    backup_file = os.path.join(project_root, f'app/data/{disease}_41feat_backup.csv')
+    new_file = os.path.join(project_root, f'app/data/{disease}_historical_data_with_healthwealth.csv')
     
     # Backup current 41-feature data
     if os.path.exists(current_file):

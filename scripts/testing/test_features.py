@@ -4,7 +4,7 @@ from app.data_utils import DataProcessor
 import pandas as pd
 
 dp = DataProcessor()
-df = pd.read_csv('app/data/dengue_historical_data.csv')
+df = pd.read_csv(os.path.join(project_root, 'app/data/dengue_historical_data.csv'))
 scaled = dp.prepare_features(df)
 
 print('Feature preparation test:')

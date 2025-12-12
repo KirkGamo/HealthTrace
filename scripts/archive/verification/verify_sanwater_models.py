@@ -6,7 +6,7 @@ print("Verifying model input shapes after sanitation/water body feature addition
 diseases = ['dengue', 'typhoid', 'cholera']
 
 for disease in diseases:
-    model_path = f'app/models/{disease}_forecast_model.h5'
+    model_path = f'app/models/{disease}_forecast_lstm.h5'
     print(f"\n{'='*60}")
     print(f"Loading {disease} model...")
     print(f"{'='*60}")

@@ -41,40 +41,42 @@ HealthTrace/
 │   └── __init__.py            # Package initialization
 │
 ├── scripts/                    # Utility scripts organized by purpose
-│   ├── data_preparation/      # Data extraction and preparation
-│   │   ├── prepare_cchain_data.py
-│   │   ├── prepare_leptospirosis.py
-│   │   ├── extract_airqual_vegetation.py
-│   │   ├── extract_atmosphere_features.py
-│   │   ├── extract_healthcare_wealth.py
-│   │   └── extract_sanitation_waterbody.py
+│   ├── archive/               # Archived one-time scripts (reference only)
+│   │   ├── data_preparation/  # Historical data extraction scripts
+│   │   │   ├── prepare_cchain_data.py
+│   │   │   ├── prepare_leptospirosis.py
+│   │   │   ├── extract_airqual_vegetation.py
+│   │   │   ├── extract_atmosphere_features.py
+│   │   │   ├── extract_healthcare_wealth.py
+│   │   │   └── extract_sanitation_waterbody.py
+│   │   ├── feature_engineering/  # Feature activation and merging
+│   │   │   ├── activate_*.py     # Feature set switchers
+│   │   │   ├── merge_*.py        # Feature dataset mergers
+│   │   │   ├── enhance_features.py
+│   │   │   ├── explore_atmosphere_data.py
+│   │   │   └── explore_available_features.py
+│   │   ├── verification/      # One-time model checks
+│   │   │   ├── check_leptospirosis.py
+│   │   │   ├── check_model_shape.py
+│   │   │   ├── verify_atmosphere_models.py
+│   │   │   └── verify_sanwater_models.py
+│   │   └── utilities/         # Temporary fix scripts
+│   │       └── quick_fix_revert.py
 │   │
-│   ├── feature_engineering/   # Feature activation and merging
-│   │   ├── activate_*.py      # Feature activation scripts
-│   │   ├── merge_*.py         # Feature merging scripts
-│   │   ├── enhance_features.py
-│   │   ├── explore_atmosphere_data.py
-│   │   └── explore_available_features.py
-│   │
-│   ├── testing/               # Test scripts for validation
+│   ├── testing/               # Active test scripts
 │   │   ├── test_app.py
 │   │   ├── test_atmosphere_features.py
 │   │   ├── test_features.py
 │   │   ├── test_fixes.py
 │   │   └── test_full_features.py
 │   │
-│   ├── verification/          # Model and data verification
-│   │   ├── check_leptospirosis.py
-│   │   ├── check_model_shape.py
-│   │   ├── compare_models.py
-│   │   ├── verify_atmosphere_models.py
-│   │   ├── verify_full_models.py
-│   │   ├── verify_healthwealth_models.py
-│   │   └── verify_sanwater_models.py
+│   ├── verification/          # Active model verification
+│   │   ├── compare_models.py      # LSTM vs GRU comparison
+│   │   ├── verify_full_models.py  # 52-feature model validation
+│   │   └── verify_healthwealth_models.py
 │   │
-│   └── utilities/             # Utility and optimization scripts
-│       ├── hyperparameter_tuning.py
-│       └── quick_fix_revert.py
+│   └── utilities/             # Active optimization tools
+│       └── hyperparameter_tuning.py  # Config optimization framework
 │
 ├── docs/                       # Documentation and project reports
 │   ├── BEST_CONFIGURATION.md  # Hyperparameter tuning results

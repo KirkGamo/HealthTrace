@@ -1,8 +1,12 @@
 import pandas as pd
+import os
+
+# Set up project root path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Load the climate atmosphere data
 print("Loading climate_atmosphere_downscaled.csv...")
-df = pd.read_csv('app/data/climate_atmosphere_downscaled.csv')
+df = pd.read_csv(os.path.join(project_root, 'app/data/climate_atmosphere_downscaled.csv'))
 
 print(f"\nDataset shape: {df.shape}")
 print(f"\nColumns: {df.columns.tolist()}")

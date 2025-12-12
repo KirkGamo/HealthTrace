@@ -1,11 +1,15 @@
 import pandas as pd
 import numpy as np
+import os
+
+# Set up project root path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 print("Extracting Healthcare and Wealth Index features for Iloilo City...\n")
 
 # Load location data to get Iloilo City barangays
 print("Loading location data...")
-location_df = pd.read_csv('app/data/location.csv')
+location_df = pd.read_csv(os.path.join(project_root, 'app/data/location.csv'))
 iloilo_brgys = location_df[location_df['adm3_pcode'] == 'PH063022000']['adm4_pcode'].tolist()
 iloilo_brgys_set = set(iloilo_brgys)
 print(f"Found {len(iloilo_brgys)} barangays in Iloilo City")
@@ -16,7 +20,7 @@ print("EXTRACTING HEALTHCARE FEATURES")
 print("="*60)
 
 print("\nLoading osm_poi_health.csv...")
-health_df = pd.read_csv('app/data/osm_poi_health.csv')
+health_df = pd.read_csv(os.path.join(project_root, 'app/data/osm_poi_health.csv'))
 
 # Filter for Iloilo City barangays
 print("Filtering for Iloilo City...")
@@ -51,7 +55,7 @@ print("EXTRACTING WEALTH INDEX FEATURES")
 print("="*60)
 
 print("\nLoading tm_relative_wealth_index.csv...")
-wealth_df = pd.read_csv('app/data/tm_relative_wealth_index.csv')
+wealth_df = pd.read_csv(os.path.join(project_root, 'app/data/tm_relative_wealth_index.csv'))
 
 # Filter for Iloilo City barangays
 print("Filtering for Iloilo City...")
@@ -97,7 +101,7 @@ print(f"\nFinal combined records: {len(combined)}")
 print(f"Date range: {combined['date'].min()} to {combined['date'].max()}")
 
 # Save the processed data
-output_file = 'app/data/iloilo_healthcare_wealth.csv'
+output_file = os.path.join(project_root, 'app/data/iloilo_healthcare_wealth.csv')
 combined.to_csv(output_file, index=False)
 
 print("\n" + "="*60)

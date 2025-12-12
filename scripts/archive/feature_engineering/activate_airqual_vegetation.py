@@ -1,22 +1,25 @@
 import shutil
 import os
 
+# Set up project root path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 print("Activating air quality and vegetation features...\n")
 
 diseases = ['dengue', 'typhoid', 'cholera']
 
 for disease in diseases:
     # Backup current 16-feature files
-    current_file = f'app/data/{disease}_historical_data.csv'
-    backup_file = f'app/data/{disease}_historical_data_16feat_backup.csv'
+    current_file = os.path.join(project_root, f'app/data/{disease}_historical_data.csv')
+    backup_file = os.path.join(project_root, f'app/data/{disease}_historical_data_16feat_backup.csv')
     
     if os.path.exists(current_file):
         shutil.copy(current_file, backup_file)
         print(f"✓ Backed up {disease}_historical_data.csv (16 features)")
     
     # Copy full feature files to main location
-    full_file = f'app/data/{disease}_historical_data_full.csv'
-    dest_file = f'app/data/{disease}_historical_data.csv'
+    full_file = os.path.join(project_root, f'app/data/{disease}_historical_data_full.csv')
+    dest_file = os.path.join(project_root, f'app/data/{disease}_historical_data.csv')
     
     shutil.copy(full_file, dest_file)
     print(f"✓ Activated {disease}_historical_data_full.csv -> {disease}_historical_data.csv")

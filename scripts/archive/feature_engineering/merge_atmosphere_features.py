@@ -1,10 +1,14 @@
 import pandas as pd
 import numpy as np
+import os
+
+# Set up project root path
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 print("Merging atmosphere features with existing enhanced data...\n")
 
 # Load the new climate atmosphere features
-climate_atmos = pd.read_csv('app/data/iloilo_climate_atmosphere.csv')
+climate_atmos = pd.read_csv(os.path.join(project_root, 'app/data/iloilo_climate_atmosphere.csv'))
 climate_atmos['date'] = pd.to_datetime(climate_atmos['date'])
 print(f"Climate atmosphere records: {len(climate_atmos)}")
 print(f"Date range: {climate_atmos['date'].min()} to {climate_atmos['date'].max()}")
@@ -17,7 +21,7 @@ for disease in diseases:
     print('='*60)
     
     # Load existing enhanced data
-    input_file = f'app/data/{disease}_historical_data_enhanced.csv'
+    input_file = os.path.join(project_root, f'app/data/{disease}_historical_data_enhanced.csv')
     df = pd.read_csv(input_file)
     df['date'] = pd.to_datetime(df['date'])
     
@@ -44,7 +48,7 @@ for disease in diseases:
     print(f"\nMerged data: {len(df_merged)} records, {len(df_merged.columns)} columns")
     
     # Save the enhanced data with atmosphere features
-    output_file = f'app/data/{disease}_historical_data_atmosphere.csv'
+    output_file = os.path.join(project_root, f'app/data/{disease}_historical_data_atmosphere.csv')
     df_merged.to_csv(output_file, index=False)
     print(f"✓ Saved to: {output_file}")
     
