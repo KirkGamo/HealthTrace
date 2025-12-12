@@ -70,7 +70,7 @@ def train_model(disease='Dengue', model_type='LSTM'):
         X_train, y_train,
         X_val, y_val,
         epochs=100,
-        batch_size=32,  # Updated from hyperparameter tuning: Config #15 (best Test MAE and R2)
+        batch_size=32,  # Config #15: Best overall performance (R²=0.52, Test MAE=0.0102)
         model_path=model_path
     )
     
