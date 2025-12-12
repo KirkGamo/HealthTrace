@@ -1,3 +1,10 @@
+import sys
+import os
+
+# Add project root to path (go up two levels: testing -> scripts -> root)
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
+
 from app.data_utils import DataProcessor
 
 print("Testing feature extraction with 23 environmental features...\n")

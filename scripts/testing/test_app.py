@@ -4,8 +4,9 @@
 import sys
 import os
 
-# Add current directory to path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Add project root to path (go up two levels: testing -> scripts -> root)
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, project_root)
 
 # Disable TensorFlow warnings
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -38,7 +39,7 @@ try:
         n_features=4,
         model_type='LSTM'
     )
-    model_path = os.path.join('app', 'models', 'dengue_forecast_model.h5')
+    model_path = os.path.join('app', 'models', 'dengue_forecast_lstm.h5')
     model.load_model(model_path)
     print(f"✓ Successfully loaded Dengue forecast model")
 except Exception as e:
